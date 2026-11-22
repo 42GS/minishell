@@ -35,6 +35,7 @@ SRC_DIR		= src
 OBJ_DIR		= obj
 
 SRCS		= $(SRC_DIR)/main.c \
+			  $(SRC_DIR)/shell_utils.c \
 			  $(SRC_DIR)/lexer/lexer.c \
 			  $(SRC_DIR)/lexer/lexer_word.c \
 			  $(SRC_DIR)/lexer/lexer_op.c \
@@ -43,8 +44,13 @@ SRCS		= $(SRC_DIR)/main.c \
 			  $(SRC_DIR)/parser/parser_cmd.c \
 			  $(SRC_DIR)/parser/parser_ast.c \
 			  $(SRC_DIR)/parser/parser_utils.c \
-			  $(SRC_DIR)/executor/executor_stub.c \
-			  $(SRC_DIR)/env/env_stub.c \
+			  $(SRC_DIR)/executor/executor.c \
+			  $(SRC_DIR)/executor/executor_pipe.c \
+			  $(SRC_DIR)/executor/executor_pipe_child.c \
+			  $(SRC_DIR)/executor/executor_path.c \
+			  $(SRC_DIR)/executor/executor_redir_stub.c \
+			  $(SRC_DIR)/env/env_core.c \
+			  $(SRC_DIR)/env/env_array.c \
 			  $(SRC_DIR)/builtins/builtins_stub.c \
 			  $(SRC_DIR)/signals/signals_stub.c
 

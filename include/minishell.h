@@ -5,8 +5,8 @@
 /*                                                    +:+ +:+         +:+     */
 /*   By: yoshin <yoshin@student.42gyeongsan.kr>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2026/11/22 22:10:00 by yoshin            #+#    #+#             */
-/*   Updated: 2026/11/22 22:10:00 by yoshin           ###   ########.fr       */
+/*   Created: 2026/11/22 23:35:00 by yoshin            #+#    #+#             */
+/*   Updated: 2026/11/22 23:35:00 by yoshin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -44,5 +44,7 @@ typedef struct s_shell
 }	t_shell;
 
 void	free_str_array(char **arr);
+void	free_child_resources(t_shell *ctx);
+char	*read_stdin_line(void);
 
 #endif

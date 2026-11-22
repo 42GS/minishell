@@ -5,29 +5,14 @@
 /*                                                    +:+ +:+         +:+     */
 /*   By: yoshin <yoshin@student.42gyeongsan.kr>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2026/11/22 22:10:00 by yoshin            #+#    #+#             */
-/*   Updated: 2026/11/22 22:10:00 by yoshin           ###   ########.fr       */
+/*   Created: 2026/11/22 23:40:00 by yoshin            #+#    #+#             */
+/*   Updated: 2026/11/22 23:40:00 by yoshin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "minishell.h"
 
 volatile sig_atomic_t	g_signal_num = 0;
-
-void	free_str_array(char **arr)
-{
-	size_t	i;
-
-	if (!arr)
-		return ;
-	i = 0;
-	while (arr[i])
-	{
-		free(arr[i]);
-		i++;
-	}
-	free(arr);
-}
 
 static int	init_shell(t_shell *ctx, char **envp)
 {
@@ -42,16 +27,36 @@ static int	init_shell(t_shell *ctx, char **envp)
 
 static void	cleanup_shell(t_shell *ctx)
 {
-	free_ast(&ctx->current_ast);
-	free_tokens(&ctx->current_tokens);
-	free_env_list(&ctx->env_list);
-	if (ctx->cwd)
-		free(ctx->cwd);
+	free_child_resources(ctx);
 	if (ctx->is_interactive)
 	{
 		rl_clear_history();
 		restore_terminal(&ctx->orig_term);
 	}
+}
+
+static void	process_line(char *line, t_shell *ctx)
+{
+	int	err;
+
+	err = 0;
+	ctx->current_tokens = tokenize_input(line, &err);
+	if (!ctx->current_tokens)
+	{
+		if (err != 0)
+			ctx->last_exit_status = err;
+		return ;
+	}
+	ctx->current_ast = parse_tokens(ctx->current_tokens, &err);
+	free_tokens(&ctx->current_tokens);
+	if (!ctx->current_ast)
+	{
+		if (err != 0)
+			ctx->last_exit_status = err;
+		return ;
+	}
+	execute_ast(ctx->current_ast, ctx);
+	free_ast(&ctx->current_ast);
 }
 
 static void	run_shell_loop(t_shell *ctx)
@@ -64,11 +69,12 @@ static void	run_shell_loop(t_shell *ctx)
 		if (ctx->is_interactive)
 			line = readline(SHELL_PROMPT);
 		else
-			line = NULL;
+			line = read_stdin_line();
 		if (!line)
 			break ;
-		if (*line)
+		if (ctx->is_interactive && *line)
 			add_history(line);
+		process_line(line, ctx);
 		free(line);
 	}
 }
