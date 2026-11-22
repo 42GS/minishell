@@ -6,6 +6,14 @@ cd "$ROOT_DIR"
 
 make -C libft > /dev/null
 
+RL_FLAGS="-lreadline"
+if [ "$(uname -s)" = "Darwin" ] && command -v brew >/dev/null 2>&1; then
+    BREW_RL="$(brew --prefix readline 2>/dev/null || true)"
+    if [ -n "$BREW_RL" ]; then
+        RL_FLAGS="-I${BREW_RL}/include -L${BREW_RL}/lib -lreadline"
+    fi
+fi
+
 run_with_leak_check() {
     local bin="$1"
     if command -v valgrind >/dev/null 2>&1; then
@@ -46,19 +54,26 @@ cc -Wall -Wextra -Werror -I include -I libft/include \
 run_with_leak_check /tmp/minishell_unit_parser
 rm -f /tmp/minishell_unit_parser
 
-cc -Wall -Wextra -Werror -I include -I libft/include \
-    tests/unit/test_executor.c \
-    src/shell_utils.c \
+CORE_SRCS="src/shell_utils.c \
     src/lexer/lexer.c src/lexer/lexer_word.c \
     src/lexer/lexer_op.c src/lexer/lexer_token.c \
     src/parser/parser.c src/parser/parser_cmd.c \
     src/parser/parser_ast.c src/parser/parser_utils.c \
     src/executor/executor.c src/executor/executor_pipe.c \
     src/executor/executor_pipe_child.c src/executor/executor_path.c \
-    src/executor/executor_redir_stub.c \
+    src/executor/executor_redir.c src/executor/executor_heredoc.c \
+    src/expander/expander.c src/expander/expander_utils.c \
     src/env/env_core.c src/env/env_array.c \
-    src/builtins/builtins_stub.c \
-    libft/libft.a \
+    src/builtins/builtins_stub.c"
+
+cc -Wall -Wextra -Werror -I include -I libft/include \
+    tests/unit/test_executor.c $CORE_SRCS libft/libft.a $RL_FLAGS \
     -o /tmp/minishell_unit_executor
 run_with_leak_check /tmp/minishell_unit_executor
 rm -f /tmp/minishell_unit_executor
+
+cc -Wall -Wextra -Werror -I include -I libft/include \
+    tests/unit/test_redir.c $CORE_SRCS libft/libft.a $RL_FLAGS \
+    -o /tmp/minishell_unit_redir
+run_with_leak_check /tmp/minishell_unit_redir
+rm -f /tmp/minishell_unit_redir

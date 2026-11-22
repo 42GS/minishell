@@ -54,6 +54,8 @@ static int	execute_simple_cmd(t_ast_node *cmd, t_shell *ctx)
 	pid_t	pid;
 	int		status;
 
+	if (!expand_cmd_args(cmd, ctx))
+		return (1);
 	if (cmd->argv && cmd->argv[0] && is_builtin(cmd->argv[0]))
 		return (execute_single_builtin(cmd, ctx));
 	pid = fork();
