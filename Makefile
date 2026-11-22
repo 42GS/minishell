@@ -35,7 +35,10 @@ SRC_DIR		= src
 OBJ_DIR		= obj
 
 SRCS		= $(SRC_DIR)/main.c \
-			  $(SRC_DIR)/lexer/lexer_stub.c \
+			  $(SRC_DIR)/lexer/lexer.c \
+			  $(SRC_DIR)/lexer/lexer_word.c \
+			  $(SRC_DIR)/lexer/lexer_op.c \
+			  $(SRC_DIR)/lexer/lexer_token.c \
 			  $(SRC_DIR)/parser/parser_stub.c \
 			  $(SRC_DIR)/executor/executor_stub.c \
 			  $(SRC_DIR)/env/env_stub.c \
