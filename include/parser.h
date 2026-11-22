@@ -5,8 +5,8 @@
 /*                                                    +:+ +:+         +:+     */
 /*   By: yoshin <yoshin@student.42gyeongsan.kr>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2026/11/22 22:10:00 by yoshin            #+#    #+#             */
-/*   Updated: 2026/11/22 22:10:00 by yoshin           ###   ########.fr       */
+/*   Created: 2026/11/22 22:58:00 by yoshin            #+#    #+#             */
+/*   Updated: 2026/11/22 22:58:00 by yoshin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -50,7 +50,20 @@ typedef struct s_ast_node
 	t_redir				*redirs;
 }	t_ast_node;
 
-t_ast_node	*parse_tokens(t_token *tokens, int *err_code);
-void		free_ast(t_ast_node **node);
+t_ast_node		*parse_tokens(t_token *tokens, int *err_code);
+void			free_ast(t_ast_node **node);
+
+t_ast_node		*parse_and_or(t_token **curr, int *err);
+t_ast_node		*parse_simple_command(t_token **curr, int *err);
+t_ast_node		*create_ast_node(t_node_type type, t_ast_node *left,
+					t_ast_node *right);
+t_ast_node		*join_ast_nodes(t_node_type type, t_ast_node *left,
+					t_ast_node *right, int *err);
+t_redir			*create_redir_node(t_token_type tok_type, t_token *target_tok);
+void			append_redir(t_redir **head, t_redir *new_redir);
+int				is_redir_token(t_token_type type);
+t_redir_type	get_redir_type(t_token_type type);
+void			*parser_syntax_error(t_token *tok, int *err);
+int				append_str_to_argv(char ***argv, const char *str);
 
 #endif

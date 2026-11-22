@@ -34,3 +34,14 @@ cc -Wall -Wextra -Werror -I include -I libft/include \
     -o /tmp/minishell_unit_lexer
 run_with_leak_check /tmp/minishell_unit_lexer
 rm -f /tmp/minishell_unit_lexer
+
+cc -Wall -Wextra -Werror -I include -I libft/include \
+    tests/unit/test_parser.c \
+    src/lexer/lexer.c src/lexer/lexer_word.c \
+    src/lexer/lexer_op.c src/lexer/lexer_token.c \
+    src/parser/parser.c src/parser/parser_cmd.c \
+    src/parser/parser_ast.c src/parser/parser_utils.c \
+    libft/libft.a \
+    -o /tmp/minishell_unit_parser
+run_with_leak_check /tmp/minishell_unit_parser
+rm -f /tmp/minishell_unit_parser

@@ -39,7 +39,10 @@ SRCS		= $(SRC_DIR)/main.c \
 			  $(SRC_DIR)/lexer/lexer_word.c \
 			  $(SRC_DIR)/lexer/lexer_op.c \
 			  $(SRC_DIR)/lexer/lexer_token.c \
-			  $(SRC_DIR)/parser/parser_stub.c \
+			  $(SRC_DIR)/parser/parser.c \
+			  $(SRC_DIR)/parser/parser_cmd.c \
+			  $(SRC_DIR)/parser/parser_ast.c \
+			  $(SRC_DIR)/parser/parser_utils.c \
 			  $(SRC_DIR)/executor/executor_stub.c \
 			  $(SRC_DIR)/env/env_stub.c \
 			  $(SRC_DIR)/builtins/builtins_stub.c \
