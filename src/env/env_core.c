@@ -17,7 +17,7 @@ static t_env_node	*create_env_node(const char *entry)
 	t_env_node	*node;
 	char		*eq;
 
-	node = (t_env_node *)malloc(sizeof(t_env_node));
+	node = (t_env_node *)ft_calloc(1, sizeof(t_env_node));
 	if (!node)
 		return (NULL);
 	eq = ft_strchr(entry, '=');
@@ -27,11 +27,7 @@ static t_env_node	*create_env_node(const char *entry)
 		node->value = ft_strdup(eq + 1);
 	}
 	else
-	{
 		node->key = ft_strdup(entry);
-		node->value = NULL;
-	}
-	node->next = NULL;
 	if (!node->key || (eq && !node->value))
 	{
 		free(node->key);
