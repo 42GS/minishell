@@ -41,12 +41,23 @@ def main():
         sys.exit(1)
 
     if args.ci:
-        # Smoke check: EOF / empty stdin must exit 0 cleanly without crash or leaks
-        rc, out, err = run_shell(MINISHELL_BIN, "")
-        if rc != 0:
-            print(f"[FAIL] Empty input smoke test returned {rc}, stderr: {err}")
-            sys.exit(1)
-        print("[E2E-CI] Smoke check PASSED (Empty EOF exit code 0).")
+        smoke_cases = [
+            ("empty_eof", ""),
+            ("simple_abs_cmd", "/bin/echo minishell_ci_ok\n"),
+            ("multi_pipeline", "/bin/echo pipe_ok | tr a-z A-Z | cat\n"),
+            ("cmd_not_found_127", "nonexistent_ci_cmd_xyz\n"),
+            ("syntax_error_2", "cat | | wc\n"),
+        ]
+        for name, script in smoke_cases:
+            b_rc, b_out, _ = run_shell("bash", script)
+            m_rc, m_out, m_err = run_shell(MINISHELL_BIN, script)
+            if m_rc != b_rc or m_out != b_out:
+                print(
+                    f"[FAIL] CI Smoke ({name}): expected rc={b_rc} out={repr(b_out)}, "
+                    f"got rc={m_rc} out={repr(m_out)} err={repr(m_err)}"
+                )
+                sys.exit(1)
+        print(f"[E2E-CI] All {len(smoke_cases)} smoke checks PASSED (matched Bash).")
         return
 
     suite_files = sorted(glob.glob(os.path.join(SUITES_DIR, "*.json")))

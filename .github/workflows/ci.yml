@@ -77,11 +77,21 @@ jobs:
 
       - name: Run Valgrind Memory & FD Leak Check
         run: |
-          valgrind \
+          printf "/bin/echo valgrind_ok | cat | cat\n" | valgrind \
             --leak-check=full \
             --show-leak-kinds=all \
             --errors-for-leak-kinds=all \
             --track-fds=yes \
             --suppressions=tests/readline.supp \
             --error-exitcode=42 \
-            ./minishell < /dev/null
+            ./minishell
+          rc=0
+          printf "nonexistent_vg_cmd\n" | valgrind \
+            --leak-check=full \
+            --show-leak-kinds=all \
+            --errors-for-leak-kinds=all \
+            --track-fds=yes \
+            --suppressions=tests/readline.supp \
+            --error-exitcode=42 \
+            ./minishell || rc=$?
+          test "$rc" -eq 127
