@@ -47,5 +47,6 @@ typedef struct s_shell
 void	free_str_array(char **arr);
 void	free_child_resources(t_shell *ctx);
 char	*read_stdin_line(void);
+void	exit_child_clean(t_shell *ctx, char *path, char **envp, int code);
 
 #endif

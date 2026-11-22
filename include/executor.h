@@ -5,8 +5,8 @@
 /*                                                    +:+ +:+         +:+     */
 /*   By: yoshin <yoshin@student.42gyeongsan.kr>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2026/11/22 23:35:00 by yoshin            #+#    #+#             */
-/*   Updated: 2026/11/22 23:35:00 by yoshin           ###   ########.fr       */
+/*   Created: 2026/11/22 23:48:00 by yoshin            #+#    #+#             */
+/*   Updated: 2026/11/22 23:48:00 by yoshin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -43,5 +43,12 @@ int		wait_pipeline(pid_t *pids, int count);
 int		normalize_wait_status(int status);
 void	exec_cmd_in_child(t_ast_node *cmd, t_shell *ctx);
 void	print_exec_error(const char *cmd, const char *msg);
+
+char	*expand_word(const char *raw, t_shell *ctx);
+char	*expand_heredoc_line(const char *raw, t_shell *ctx);
+char	*strip_quotes_only(const char *raw);
+int		expand_cmd_args(t_ast_node *cmd, t_shell *ctx);
+int		append_char_str(char **res, char c);
+int		append_str_free(char **res, char *chunk);
 
 #endif

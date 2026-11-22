@@ -48,6 +48,7 @@ typedef struct s_ast_node
 	struct s_ast_node	*right;
 	char				**argv;
 	t_redir				*redirs;
+	bool				is_expanded;
 }	t_ast_node;
 
 t_ast_node		*parse_tokens(t_token *tokens, int *err_code);

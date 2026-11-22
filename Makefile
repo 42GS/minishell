@@ -48,7 +48,10 @@ SRCS		= $(SRC_DIR)/main.c \
 			  $(SRC_DIR)/executor/executor_pipe.c \
 			  $(SRC_DIR)/executor/executor_pipe_child.c \
 			  $(SRC_DIR)/executor/executor_path.c \
-			  $(SRC_DIR)/executor/executor_redir_stub.c \
+			  $(SRC_DIR)/executor/executor_redir.c \
+			  $(SRC_DIR)/executor/executor_heredoc.c \
+			  $(SRC_DIR)/expander/expander.c \
+			  $(SRC_DIR)/expander/expander_utils.c \
 			  $(SRC_DIR)/env/env_core.c \
 			  $(SRC_DIR)/env/env_array.c \
 			  $(SRC_DIR)/builtins/builtins_stub.c \

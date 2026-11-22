@@ -43,6 +43,14 @@ void	free_child_resources(t_shell *ctx)
 	}
 }
 
+void	exit_child_clean(t_shell *ctx, char *path, char **envp, int code)
+{
+	free(path);
+	free_str_array(envp);
+	free_child_resources(ctx);
+	exit(code);
+}
+
 static char	*append_char_line(char *line, char c, size_t len)
 {
 	char	*new_line;

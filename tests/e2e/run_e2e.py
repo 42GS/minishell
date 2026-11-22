@@ -44,7 +44,10 @@ def main():
         smoke_cases = [
             ("empty_eof", ""),
             ("simple_abs_cmd", "/bin/echo minishell_ci_ok\n"),
+            ("quotes_and_vars", "/bin/echo \"'$USER'\" '\"$USER\"'\n"),
             ("multi_pipeline", "/bin/echo pipe_ok | tr a-z A-Z | cat\n"),
+            ("redir_out_append_in", "/bin/echo line1 > /tmp/ms_ci_r.txt\n/bin/echo line2 >> /tmp/ms_ci_r.txt\ncat < /tmp/ms_ci_r.txt\nrm -f /tmp/ms_ci_r.txt\n"),
+            ("heredoc_basic", "cat << EOF\nhd_line1\nhd_line2\nEOF\n"),
             ("cmd_not_found_127", "nonexistent_ci_cmd_xyz\n"),
             ("syntax_error_2", "cat | | wc\n"),
         ]
