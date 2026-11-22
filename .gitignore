@@ -1,0 +1,27 @@
+# Explicitly track Makefiles (override global gitignore)
+!Makefile
+!**/Makefile
+
+# Compiled binaries & object files
+*.o
+*.a
+*.dSYM/
+obj/
+minishell
+minishell_bonus
+libft/obj/
+
+# Build & debug artifacts
+*.out
+*.log
+*.tmp
+vgcore.*
+.DS_Store
+
+# IDE & Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+compile_commands.json
