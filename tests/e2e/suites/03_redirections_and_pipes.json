@@ -1,0 +1,11 @@
+{
+  "suite": "03. Redirections & IPC Pipelines",
+  "cases": [
+    {"name": "redir_out_and_in", "input": "echo hello_redir > /tmp/mini_test_redir.txt\ncat < /tmp/mini_test_redir.txt\nrm -f /tmp/mini_test_redir.txt\n"},
+    {"name": "redir_append", "input": "echo line1 > /tmp/mini_test_app.txt\necho line2 >> /tmp/mini_test_app.txt\ncat < /tmp/mini_test_app.txt\nrm -f /tmp/mini_test_app.txt\n"},
+    {"name": "heredoc_basic", "input": "cat << EOF\nfirst line\nsecond line\nEOF\n"},
+    {"name": "pipe_3_stage", "input": "printf 'apple\\nbanana\\ncherry\\n' | grep banana | wc -l\n"},
+    {"name": "pipe_with_invalid_left_cmd", "input": "ls /no_such_file_123 | grep x | wc -l\n"},
+    {"name": "pipe_and_redir_mixed", "input": "echo pipe_redir | cat > /tmp/mini_pr.txt\ncat < /tmp/mini_pr.txt\nrm -f /tmp/mini_pr.txt\n"}
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "suite": "04. 7 Builtin Utilities",
+  "cases": [
+    {"name": "echo_n_variants", "input": "echo -n hello\necho -nnnn -nn world\necho -na literal\n"},
+    {"name": "pwd_command", "input": "pwd\n"},
+    {"name": "cd_and_pwd", "input": "cd /tmp\npwd\ncd -\npwd\n"},
+    {"name": "export_and_unset", "input": "export TEST_K=val1\nexport TEST_K=val2\nenv | grep TEST_K\nunset TEST_K\nenv | grep TEST_K\n"},
+    {"name": "unset_path", "input": "unset PATH\nls\n"},
+    {"name": "exit_modulo_256", "input": "exit 259\n"},
+    {"name": "exit_numeric_error", "input": "exit not_a_number\n"},
+    {"name": "exit_too_many_args_no_exit", "input": "exit 1 2\necho still_alive $?\n"}
+  ]
+}

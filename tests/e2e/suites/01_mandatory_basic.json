@@ -1,0 +1,12 @@
+{
+  "suite": "01. Mandatory Basic & Path Resolution",
+  "cases": [
+    {"name": "empty_line", "input": "\n"},
+    {"name": "spaces_and_tabs_only", "input": "   \t  \t \n"},
+    {"name": "absolute_path_bin_echo", "input": "/bin/echo hello world\n"},
+    {"name": "command_via_path", "input": "echo path_ok\n"},
+    {"name": "nonexistent_command", "input": "nonexistent_cmd_xyz_123\n"},
+    {"name": "exit_status_after_fail", "input": "ls /nonexistent_dir_xyz\necho $?\n"},
+    {"name": "multiple_exit_status", "input": "false\nexpr $? + $?\n"}
+  ]
+}

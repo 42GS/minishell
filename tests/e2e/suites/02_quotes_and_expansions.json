@@ -1,0 +1,12 @@
+{
+  "suite": "02. Quoting & Variable Expansions",
+  "cases": [
+    {"name": "single_quotes_literal_var", "input": "echo '$USER $HOME | >'\n"},
+    {"name": "double_quotes_preserve_meta", "input": "echo \"cat lol.c | cat > lol.c\"\n"},
+    {"name": "double_quotes_expand_var", "input": "export MY_TEST_VAR=42gs\necho \"val=$MY_TEST_VAR\"\n"},
+    {"name": "surprise_single_inside_double", "input": "export USER=tester\necho '\"$USER\"'\n"},
+    {"name": "surprise_double_inside_single", "input": "export USER=tester\necho \"'$USER'\"\n"},
+    {"name": "undefined_var_empty", "input": "echo [$UNDEFINED_VAR_XYZ]\n"},
+    {"name": "empty_quote_args", "input": "echo '' \"\" end\n"}
+  ]
+}

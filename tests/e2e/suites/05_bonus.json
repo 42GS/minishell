@@ -1,0 +1,10 @@
+{
+  "suite": "05. Bonus (&&, ||, Subshells, Wildcards)",
+  "cases": [
+    {"name": "and_or_short_circuit", "input": "true && echo ok1\nfalse && echo skip1\nfalse || echo ok2\ntrue || echo skip2\n"},
+    {"name": "subshell_env_isolation", "input": "export ISO=parent\n(export ISO=child && cd /tmp && echo $ISO)\necho $ISO\n"},
+    {"name": "parentheses_priority", "input": "(false || true) && echo passed\n"},
+    {"name": "wildcard_cwd", "input": "echo Make*\n"},
+    {"name": "wildcard_nomatch_fallback", "input": "echo nonexistent_wildcard_*\n"}
+  ]
+}
