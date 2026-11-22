@@ -37,6 +37,7 @@ typedef struct s_shell
 	t_env_node		*env_list;
 	int				last_exit_status;
 	char			*cwd;
+	char			*line;
 	bool			is_interactive;
 	t_ast_node		*current_ast;
 	t_token			*current_tokens;

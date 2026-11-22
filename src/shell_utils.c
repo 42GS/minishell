@@ -31,6 +31,8 @@ void	free_child_resources(t_shell *ctx)
 {
 	if (!ctx)
 		return ;
+	free(ctx->line);
+	ctx->line = NULL;
 	free_ast(&ctx->current_ast);
 	free_tokens(&ctx->current_tokens);
 	free_env_list(&ctx->env_list);

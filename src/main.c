@@ -35,12 +35,12 @@ static void	cleanup_shell(t_shell *ctx)
 	}
 }
 
-static void	process_line(char *line, t_shell *ctx)
+static void	process_line(t_shell *ctx)
 {
 	int	err;
 
 	err = 0;
-	ctx->current_tokens = tokenize_input(line, &err);
+	ctx->current_tokens = tokenize_input(ctx->line, &err);
 	if (!ctx->current_tokens)
 	{
 		if (err != 0)
@@ -61,21 +61,20 @@ static void	process_line(char *line, t_shell *ctx)
 
 static void	run_shell_loop(t_shell *ctx)
 {
-	char	*line;
-
 	while (1)
 	{
 		set_signal_state(SIG_STATE_INTERACTIVE);
 		if (ctx->is_interactive)
-			line = readline(SHELL_PROMPT);
+			ctx->line = readline(SHELL_PROMPT);
 		else
-			line = read_stdin_line();
-		if (!line)
+			ctx->line = read_stdin_line();
+		if (!ctx->line)
 			break ;
-		if (ctx->is_interactive && *line)
-			add_history(line);
-		process_line(line, ctx);
-		free(line);
+		if (ctx->is_interactive && *(ctx->line))
+			add_history(ctx->line);
+		process_line(ctx);
+		free(ctx->line);
+		ctx->line = NULL;
 	}
 }
 
