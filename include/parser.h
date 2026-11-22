@@ -34,7 +34,7 @@ typedef enum e_redir_type
 
 typedef struct s_redir
 {
-	t_redir_type		type;
+	t_redir_type	type;
 	char			*target;
 	int				heredoc_fd;
 	bool			quoted_delim;

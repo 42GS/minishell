@@ -31,7 +31,7 @@ static size_t	count_words(char const *s, char c)
 	return (count);
 }
 
-static void	*free_split(char **arr, size_t n)
+static int	free_split(char **arr, size_t n)
 {
 	size_t	i;
 
@@ -42,7 +42,7 @@ static void	*free_split(char **arr, size_t n)
 		i++;
 	}
 	free(arr);
-	return (NULL);
+	return (0);
 }
 
 static int	fill_words(char **arr, char const *s, char c)
@@ -64,10 +64,7 @@ static int	fill_words(char **arr, char const *s, char c)
 		{
 			arr[j] = ft_substr(s, start, i - start);
 			if (!arr[j])
-			{
-				free_split(arr, j);
-				return (0);
-			}
+				return (free_split(arr, j));
 			j++;
 		}
 	}
