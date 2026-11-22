@@ -55,14 +55,10 @@ static void	process_line(t_shell *ctx)
 			ctx->last_exit_status = err;
 		return ;
 	}
-	if (!collect_heredocs(ctx->current_ast, ctx))
-	{
-		free_ast(&ctx->current_ast);
-		if (g_signal_num == SIGINT)
-			ctx->last_exit_status = 130;
-		return ;
-	}
-	execute_ast(ctx->current_ast, ctx);
+	if (collect_heredocs(ctx->current_ast, ctx))
+		execute_ast(ctx->current_ast, ctx);
+	else if (g_signal_num == SIGINT)
+		ctx->last_exit_status = 130;
 	free_ast(&ctx->current_ast);
 }
 
