@@ -49,6 +49,7 @@ SRCS		= $(SRC_DIR)/main.c \
 			  $(SRC_DIR)/executor/executor_pipe_child.c \
 			  $(SRC_DIR)/executor/executor_wait.c \
 			  $(SRC_DIR)/executor/executor_path.c \
+			  $(SRC_DIR)/executor/executor_path_utils.c \
 			  $(SRC_DIR)/executor/executor_redir.c \
 			  $(SRC_DIR)/executor/executor_heredoc.c \
 			  $(SRC_DIR)/executor/executor_heredoc_child.c \
