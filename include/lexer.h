@@ -29,6 +29,7 @@ typedef enum e_token_type
 	TOK_REDIR_APPEND,
 	TOK_HEREDOC,
 	TOK_AND_IF,
+	TOK_AMP,
 	TOK_OR_IF,
 	TOK_LPAREN,
 	TOK_RPAREN,

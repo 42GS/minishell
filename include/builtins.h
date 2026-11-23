@@ -33,6 +33,8 @@ int			env_unset(t_env_node **env, const char *key);
 char		**env_list_to_array(t_env_node *env);
 bool		is_builtin(const char *cmd_name);
 int			dispatch_builtin(char **argv, t_shell *ctx, bool in_child);
+int			builtin_write_str(int fd, const char *s);
+int			builtin_write_endl(int fd, const char *s);
 int			ft_echo(char **argv);
 int			ft_cd(char **argv, t_shell *ctx);
 int			ft_pwd(t_shell *ctx);

@@ -53,3 +53,31 @@ int	dispatch_builtin(char **argv, t_shell *ctx, bool in_child)
 		return (ft_exit(argv, ctx, in_child));
 	return (1);
 }
+
+int	builtin_write_str(int fd, const char *s)
+{
+	size_t	len;
+	ssize_t	written;
+
+	if (!s)
+		return (0);
+	len = ft_strlen(s);
+	while (len > 0)
+	{
+		written = write(fd, s, len);
+		if (written < 0)
+			return (1);
+		s += written;
+		len -= (size_t)written;
+	}
+	return (0);
+}
+
+int	builtin_write_endl(int fd, const char *s)
+{
+	if (builtin_write_str(fd, s) != 0)
+		return (1);
+	if (write(fd, "\n", 1) < 0)
+		return (1);
+	return (0);
+}

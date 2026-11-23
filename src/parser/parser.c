@@ -29,7 +29,8 @@ static int	parse_redir_list(t_token **curr, t_redir **redirs, int *err)
 		node = create_redir_node(op_type, *curr);
 		if (!node)
 		{
-			*err = 1;
+			if (err)
+				*err = 1;
 			return (0);
 		}
 		append_redir(redirs, node);

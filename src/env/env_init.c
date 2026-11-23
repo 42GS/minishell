@@ -12,6 +12,13 @@
 
 #include "minishell.h"
 
+static const char	*skip_shlvl_spaces(const char *s)
+{
+	while (*s == ' ' || (*s >= '\t' && *s <= '\r'))
+		s++;
+	return (s);
+}
+
 static bool	parse_shlvl_val(const char *s, int *out)
 {
 	long	val;
@@ -19,8 +26,7 @@ static bool	parse_shlvl_val(const char *s, int *out)
 
 	if (!s || !*s)
 		return (false);
-	while (*s == ' ' || (*s >= '\t' && *s <= '\r'))
-		s++;
+	s = skip_shlvl_spaces(s);
 	sign = 1;
 	if (*s == '-' || *s == '+')
 	{
@@ -38,7 +44,7 @@ static bool	parse_shlvl_val(const char *s, int *out)
 		s++;
 	}
 	*out = (int)(val * sign);
-	return (*s == '\0');
+	return (*skip_shlvl_spaces(s) == '\0');
 }
 
 static void	update_shlvl(t_shell *ctx)

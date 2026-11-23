@@ -70,6 +70,8 @@ def main():
             ("path_empty_seg_lead", "export PATH=:/bin:/usr/bin\nminishell < /dev/null\n"),
             ("path_empty_seg_trail", "export PATH=/bin:/usr/bin:\nminishell < /dev/null\n"),
             ("path_noexec_126", "touch /tmp/ms_ci_noexec\nchmod 644 /tmp/ms_ci_noexec\nexport PATH=/tmp:$PATH\nms_ci_noexec\necho rc=$?\nrm -f /tmp/ms_ci_noexec\n"),
+            ("lex_triple_amp_syntax", "echo a &&& echo b\n"),
+            ("lex_quoted_amp_literal", "echo 'a&b' \"c&&&d\"\n"),
         ]
         for name, script in smoke_cases:
             b_rc, b_out, _ = run_shell("bash", script)

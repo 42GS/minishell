@@ -94,7 +94,8 @@ static void	test_syntax_errors_leak_free(void)
 {
 	const char	*bad_cases[] = {
 		"| ls", "ls | | grep a", "ls &&", "cat <",
-		"cat > | ls", "( )", "(ls && pwd", "ls )", "(ls) foo", NULL
+		"cat > | ls", "( )", "(ls && pwd", "ls )", "(ls) foo",
+		"echo a &&& echo b", "echo a & b", "&", "echo x&y", NULL
 	};
 	int			i;
 	int			err;
@@ -107,6 +108,11 @@ static void	test_syntax_errors_leak_free(void)
 		assert(ast == NULL && err == 2);
 		i++;
 	}
+	assert(lex_and_parse("echo a &&& echo b", NULL) == NULL);
+	assert(lex_and_parse("(ls) >", NULL) == NULL);
+	ast = lex_and_parse("echo 'a&b' \"c&d\"", &err);
+	assert(ast != NULL && err == 0);
+	free_ast(&ast);
 }
 
 int	main(void)

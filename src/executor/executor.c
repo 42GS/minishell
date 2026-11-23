@@ -18,12 +18,14 @@ static void	restore_std_fds(t_shell *ctx)
 		return ;
 	if (ctx->saved_in >= 0)
 	{
-		dup2(ctx->saved_in, STDIN_FILENO);
+		if (dup2(ctx->saved_in, STDIN_FILENO) == -1)
+			perror("minishell: dup2");
 		close(ctx->saved_in);
 	}
 	if (ctx->saved_out >= 0)
 	{
-		dup2(ctx->saved_out, STDOUT_FILENO);
+		if (dup2(ctx->saved_out, STDOUT_FILENO) == -1)
+			perror("minishell: dup2");
 		close(ctx->saved_out);
 	}
 	ctx->saved_in = -1;

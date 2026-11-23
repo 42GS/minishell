@@ -83,9 +83,30 @@ static void	test_bonus_ops_and_single_ampersand(void)
 	cur = cur->next;
 	assert(cur->type == TOK_WORD && strcmp(cur->value, "echo") == 0);
 	cur = cur->next;
-	assert(cur->type == TOK_WORD && strcmp(cur->value, "x&y") == 0);
+	assert(cur->type == TOK_WORD && strcmp(cur->value, "x") == 0);
+	cur = cur->next;
+	assert(cur->type == TOK_AMP && strcmp(cur->value, "&") == 0);
+	cur = cur->next;
+	assert(cur->type == TOK_WORD && strcmp(cur->value, "y") == 0);
 	cur = cur->next;
 	assert(cur->type == TOK_EOF);
+	free_tokens(&tok);
+	tok = tokenize_input("echo a &&& echo b", &err);
+	assert(err == 0 && tok != NULL);
+	cur = tok->next->next;
+	assert(cur->type == TOK_AND_IF && strcmp(cur->value, "&&") == 0);
+	cur = cur->next;
+	assert(cur->type == TOK_AMP && strcmp(cur->value, "&") == 0);
+	cur = cur->next;
+	assert(cur->type == TOK_WORD && strcmp(cur->value, "echo") == 0);
+	free_tokens(&tok);
+	tok = tokenize_input("echo 'a&b' \"c&d\"", &err);
+	assert(err == 0 && tok != NULL);
+	cur = tok->next;
+	assert(cur->type == TOK_WORD && strcmp(cur->value, "'a&b'") == 0);
+	cur = cur->next;
+	assert(cur->type == TOK_WORD && strcmp(cur->value, "\"c&d\"") == 0);
+	assert(cur->next->type == TOK_EOF);
 	free_tokens(&tok);
 }
 

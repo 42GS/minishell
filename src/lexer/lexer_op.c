@@ -41,6 +41,8 @@ static size_t	match_one_char_op(char c, t_token_type *type)
 {
 	if (c == '|')
 		*type = TOK_PIPE;
+	else if (c == '&')
+		*type = TOK_AMP;
 	else if (c == '<')
 		*type = TOK_REDIR_IN;
 	else if (c == '>')
