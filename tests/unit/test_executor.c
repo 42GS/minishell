@@ -18,6 +18,7 @@ static int	run_line_ctx(const char *line, t_shell *ctx)
 	free_tokens(&ctx->current_tokens);
 	if (!ctx->current_ast)
 		return (err);
+	ctx->interrupted = false;
 	err = execute_ast(ctx->current_ast, ctx);
 	free_ast(&ctx->current_ast);
 	return (err);
@@ -93,6 +94,39 @@ static void	test_path_edge_cases(t_shell *ctx)
 	rmdir("/tmp/ms_u_p2");
 }
 
+static void	test_bonus_logic_and_subshells(t_shell *ctx)
+{
+	char	orig_cwd[4096];
+	char	now_cwd[4096];
+	int		fd;
+	char	buf[16];
+
+	assert(run_line_ctx("false && true || true", ctx) == 0);
+	assert(run_line_ctx("true || false && false", ctx) == 1);
+	assert(run_line_ctx("true || (false && false)", ctx) == 0);
+	assert(run_line_ctx("false || true && false", ctx) == 1);
+	assert(run_line_ctx("false | true && true", ctx) == 0);
+	assert(run_line_ctx("(false || true) && true", ctx) == 0);
+	assert(run_line_ctx("false && (true || true)", ctx) == 1);
+	assert(getcwd(orig_cwd, sizeof(orig_cwd)) != NULL);
+	assert(env_set(&ctx->env_list, "MS_SUB_ISO", "parent") == 0);
+	assert(run_line_ctx("(export MS_SUB_ISO=child && cd .. && exit 0)",
+			ctx) == 0);
+	assert(strcmp(env_get(ctx->env_list, "MS_SUB_ISO"), "parent") == 0);
+	assert(getcwd(now_cwd, sizeof(now_cwd)) != NULL
+		&& strcmp(orig_cwd, now_cwd) == 0);
+	env_unset(&ctx->env_list, "MS_SUB_ISO");
+	assert(run_line_ctx("(exit 42)", ctx) == 42);
+	assert(run_line_ctx("(exit 130) || true", ctx) == 0);
+	assert(run_line_ctx("(echo a && echo b) > /tmp/ms_u_sub.txt", ctx) == 0);
+	fd = open("/tmp/ms_u_sub.txt", O_RDONLY);
+	assert(fd >= 0);
+	assert(read(fd, buf, 4) == 4 && memcmp(buf, "a\nb\n", 4) == 0);
+	close(fd);
+	unlink("/tmp/ms_u_sub.txt");
+	assert(run_line_ctx("(echo a && echo b) | wc -l > /dev/null", ctx) == 0);
+}
+
 int	main(int argc, char **argv, char **envp)
 {
 	t_shell	ctx;
@@ -106,6 +140,7 @@ int	main(int argc, char **argv, char **envp)
 	test_pipeline_status_propagation(&ctx);
 	test_multi_stage_pipe_no_hang(&ctx);
 	test_path_edge_cases(&ctx);
+	test_bonus_logic_and_subshells(&ctx);
 	free_child_resources(&ctx);
 	printf("[UNIT] All Executor & Pipeline unit tests PASSED!\n");
 	return (0);

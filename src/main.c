@@ -43,6 +43,7 @@ static void	process_line(t_shell *ctx)
 	int	err;
 
 	err = 0;
+	ctx->interrupted = false;
 	ctx->current_tokens = tokenize_input(ctx->line, &err);
 	if (!ctx->current_tokens)
 	{

@@ -72,6 +72,16 @@ def main():
             ("path_noexec_126", "touch /tmp/ms_ci_noexec\nchmod 644 /tmp/ms_ci_noexec\nexport PATH=/tmp:$PATH\nms_ci_noexec\necho rc=$?\nrm -f /tmp/ms_ci_noexec\n"),
             ("lex_triple_amp_syntax", "echo a &&& echo b\n"),
             ("lex_quoted_amp_literal", "echo 'a&b' \"c&&&d\"\n"),
+            ("bonus_and_or_short_circuit", "true && echo ok1\nfalse && echo skip1\nfalse || echo ok2\ntrue || echo skip2\n"),
+            ("bonus_and_or_left_assoc", "false && echo a || echo b\ntrue || echo c && echo d\nfalse || true && echo e\n"),
+            ("bonus_pipe_prec_vs_logic", "false | true && echo p1\ntrue | false || echo p2\n"),
+            ("bonus_paren_priority", "(false || true) && echo p1\nfalse && (echo a || echo b)\n"),
+            ("bonus_nested_subshells", "( ( ( echo deep ) ) )\n( ( false || ( true && echo nested ) ) )\n"),
+            ("bonus_subshell_iso", "export ISO=parent\n(export ISO=child && cd .. && echo $ISO && pwd)\necho $ISO\npwd\n"),
+            ("bonus_subshell_exit_130_or", "(exit 42)\necho rc=$?\n(exit 130) || echo non_sig_130=$?\n"),
+            ("bonus_subshell_redir", "(echo l1 && echo l2) > /tmp/ms_ci_sub.txt\n(cat && echo l3) < /tmp/ms_ci_sub.txt\nrm -f /tmp/ms_ci_sub.txt\n"),
+            ("bonus_subshell_pipe", "(echo a && echo b) | tr a-z A-Z\nprintf \"x\\ny\\n\" | (cat && echo z)\n"),
+            ("bonus_subshell_heredoc", "(cat << A && cat << B)\nfirst\nA\nsecond\nB\n(cat && echo tail) << C\nhd_sub\nC\n"),
         ]
         for name, script in smoke_cases:
             b_rc, b_out, _ = run_shell("bash", script)

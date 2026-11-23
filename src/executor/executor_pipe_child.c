@@ -63,6 +63,7 @@ static void	run_pipe_node(t_pipe_ctx *pctx, int idx, t_shell *ctx)
 		exec_cmd_in_child(cmd, ctx);
 	if (apply_redirections(cmd->redirs, ctx) != 0)
 		exit_child_clean(ctx, NULL, NULL, 1);
+	close_ast_heredocs(ctx->current_ast, cmd->left);
 	status = execute_ast(cmd->left, ctx);
 	exit_child_clean(ctx, NULL, NULL, status);
 }

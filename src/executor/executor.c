@@ -102,6 +102,7 @@ static int	execute_subshell(t_ast_node *node, t_shell *ctx)
 		ctx->in_subshell = true;
 		if (apply_redirections(node->redirs, ctx) != 0)
 			exit_child_clean(ctx, NULL, NULL, 1);
+		close_ast_heredocs(ctx->current_ast, node->left);
 		status = execute_ast(node->left, ctx);
 		exit_child_clean(ctx, NULL, NULL, status);
 	}
@@ -123,13 +124,13 @@ int	execute_ast(t_ast_node *node, t_shell *ctx)
 	else if (node->type == NODE_AND)
 	{
 		status = execute_ast(node->left, ctx);
-		if (status == 0)
+		if (status == 0 && !ctx->interrupted)
 			status = execute_ast(node->right, ctx);
 	}
 	else
 	{
 		status = execute_ast(node->left, ctx);
-		if (status != 0)
+		if (status != 0 && !ctx->interrupted)
 			status = execute_ast(node->right, ctx);
 	}
 	ctx->last_exit_status = status;
