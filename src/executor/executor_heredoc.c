@@ -6,7 +6,7 @@
 /*   By: yoshin <yoshin@student.42gyeongsan.kr>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/11/22 23:48:00 by yoshin            #+#    #+#             */
-/*   Updated: 2026/11/23 12:15:00 by yoshin           ###   ########.fr       */
+/*   Updated: 2026/11/23 13:34:00 by yoshin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,6 +23,34 @@ static char	*make_heredoc_tmp_path(int id)
 	path = ft_strjoin("/tmp/.minishell_hd_", num);
 	free(num);
 	return (path);
+}
+
+static int	open_anon_heredoc_fds(int fds[2])
+{
+	char	*path;
+	int		id;
+
+	id = 0;
+	while (id < 100000)
+	{
+		path = make_heredoc_tmp_path(id++);
+		if (!path)
+			return (0);
+		fds[1] = open(path, O_WRONLY | O_CREAT | O_EXCL, 0600);
+		if (fds[1] >= 0)
+		{
+			fds[0] = open(path, O_RDONLY);
+			unlink(path);
+			free(path);
+			if (fds[0] < 0)
+				close(fds[1]);
+			return (fds[0] >= 0);
+		}
+		free(path);
+		if (errno != EEXIST)
+			return (0);
+	}
+	return (0);
 }
 
 static int	wait_heredoc_child(pid_t pid, t_shell *ctx)
@@ -49,49 +77,37 @@ static int	wait_heredoc_child(pid_t pid, t_shell *ctx)
 	return (WIFEXITED(status) && WEXITSTATUS(status) == 0);
 }
 
-static int	open_heredoc_rw(t_redir *redir, t_shell *ctx, char *path)
+static int	process_heredoc_redir(t_redir *redir, t_shell *ctx)
 {
-	int		fd;
+	int		fds[2];
 	pid_t	pid;
 	int		ok;
 
-	fd = open(path, O_WRONLY | O_CREAT | O_TRUNC, 0600);
-	if (fd < 0)
+	if (!open_anon_heredoc_fds(fds))
 		return (0);
 	if (!ctx->in_subshell)
 		set_signal_state(SIG_STATE_EXECUTION);
 	pid = fork();
 	if (pid == 0)
-		run_heredoc_child(fd, redir, path, ctx);
-	close(fd);
+		run_heredoc_child(fds, redir, ctx);
+	close(fds[1]);
 	ok = 0;
 	if (pid > 0)
 		ok = wait_heredoc_child(pid, ctx);
 	else if (!ctx->in_subshell)
 		set_signal_state(SIG_STATE_INTERACTIVE);
-	return (ok);
-}
-
-static int	process_heredoc_redir(t_redir *redir, t_shell *ctx, int *id)
-{
-	char	*path;
-	int		ok;
-
-	path = make_heredoc_tmp_path((*id)++);
-	if (!path)
-		return (0);
-	ok = open_heredoc_rw(redir, ctx, path);
 	if (ok)
-		redir->heredoc_fd = open(path, O_RDONLY);
-	unlink(path);
-	free(path);
-	return (ok && redir->heredoc_fd >= 0);
+	{
+		redir->heredoc_fd = fds[0];
+		return (1);
+	}
+	close(fds[0]);
+	return (0);
 }
 
 int	collect_heredocs(t_ast_node *node, t_shell *ctx)
 {
-	static int	hd_id;
-	t_redir		*redir;
+	t_redir	*redir;
 
 	if (!node)
 		return (1);
@@ -104,7 +120,7 @@ int	collect_heredocs(t_ast_node *node, t_shell *ctx)
 	{
 		if (redir->type == REDIR_HEREDOC)
 		{
-			if (!process_heredoc_redir(redir, ctx, &hd_id))
+			if (!process_heredoc_redir(redir, ctx))
 				return (0);
 		}
 		redir = redir->next;

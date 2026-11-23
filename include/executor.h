@@ -44,7 +44,8 @@ int		wait_child_status(pid_t pid, t_shell *ctx);
 int		normalize_wait_status(int status);
 void	exec_cmd_in_child(t_ast_node *cmd, t_shell *ctx);
 void	print_exec_error(const char *cmd, const char *msg);
-void	run_heredoc_child(int fd, t_redir *redir, char *path, t_shell *ctx);
+void	run_heredoc_child(int fds[2], t_redir *redir, t_shell *ctx);
+void	close_ast_heredocs(t_ast_node *node);
 
 char	*expand_word(const char *raw, t_shell *ctx);
 char	*expand_heredoc_line(const char *raw, t_shell *ctx);

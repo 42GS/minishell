@@ -57,6 +57,8 @@ def main():
             ("builtin_exit_mod", "exit 259\n"),
             ("builtin_exit_many_stay", "exit 1 2\necho alive\n"),
             ("builtin_exit_non_num", "exit not_a_num\n"),
+            ("heredoc_no_sibling_fd_leak", "cat << EOF | /bin/sh -c \"ls /dev/fd\"\nhi\nEOF\n"),
+            ("heredoc_multi_same_cmd", "cat << A << B\nfirst\nA\nsecond\nB\n"),
         ]
         for name, script in smoke_cases:
             b_rc, b_out, _ = run_shell("bash", script)

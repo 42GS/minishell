@@ -82,6 +82,42 @@ static void	test_heredoc_collection(t_shell *ctx)
 	free_ast(&ctx->current_ast);
 }
 
+static void	test_heredoc_excl_no_clobber(t_shell *ctx)
+{
+	int			guard_fd;
+	int			pfd[2];
+	int			saved_in;
+	t_token		*toks;
+	char		buf[32];
+	ssize_t		n;
+	int			err;
+
+	guard_fd = open("/tmp/.minishell_hd_0", O_WRONLY | O_CREAT | O_TRUNC, 0600);
+	assert(guard_fd >= 0);
+	assert(write(guard_fd, "keep_me\n", 8) == 8);
+	close(guard_fd);
+	toks = tokenize_input("cat << EOF", &err);
+	ctx->current_ast = parse_tokens(toks, &err);
+	free_tokens(&toks);
+	assert(ctx->current_ast != NULL);
+	assert(pipe(pfd) == 0);
+	ft_putstr_fd("ok\nEOF\n", pfd[1]);
+	close(pfd[1]);
+	saved_in = dup(STDIN_FILENO);
+	dup2(pfd[0], STDIN_FILENO);
+	close(pfd[0]);
+	assert(collect_heredocs(ctx->current_ast, ctx) == 1);
+	dup2(saved_in, STDIN_FILENO);
+	close(saved_in);
+	free_ast(&ctx->current_ast);
+	guard_fd = open("/tmp/.minishell_hd_0", O_RDONLY);
+	assert(guard_fd >= 0);
+	n = read(guard_fd, buf, sizeof(buf) - 1);
+	close(guard_fd);
+	unlink("/tmp/.minishell_hd_0");
+	assert(n == 8 && memcmp(buf, "keep_me\n", 8) == 0);
+}
+
 int	main(void)
 {
 	t_shell	ctx;
@@ -95,6 +131,7 @@ int	main(void)
 	test_expander_quotes_and_vars(&ctx);
 	test_file_redirections(&ctx);
 	test_heredoc_collection(&ctx);
+	test_heredoc_excl_no_clobber(&ctx);
 	free_child_resources(&ctx);
 	printf("[UNIT] All Redirection & Heredoc unit tests PASSED!\n");
 	return (0);
