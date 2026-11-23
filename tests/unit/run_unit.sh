@@ -63,8 +63,14 @@ CORE_SRCS="src/shell_utils.c \
     src/executor/executor_pipe_child.c src/executor/executor_path.c \
     src/executor/executor_redir.c src/executor/executor_heredoc.c \
     src/expander/expander.c src/expander/expander_utils.c \
-    src/env/env_core.c src/env/env_array.c \
-    src/builtins/builtins_stub.c"
+    src/env/env_core.c src/env/env_ops.c \
+    src/env/env_init.c src/env/env_array.c \
+    src/builtins/builtins.c src/builtins/builtin_echo.c \
+    src/builtins/builtin_cd.c src/builtins/builtin_pwd.c \
+    src/builtins/builtin_export.c src/builtins/builtin_export_print.c \
+    src/builtins/builtin_unset.c src/builtins/builtin_env.c \
+    src/builtins/builtin_exit.c \
+    src/signals/signals_stub.c"
 
 cc -Wall -Wextra -Werror -I include -I libft/include \
     tests/unit/test_executor.c $CORE_SRCS libft/libft.a $RL_FLAGS \
@@ -77,3 +83,9 @@ cc -Wall -Wextra -Werror -I include -I libft/include \
     -o /tmp/minishell_unit_redir
 run_with_leak_check /tmp/minishell_unit_redir
 rm -f /tmp/minishell_unit_redir
+
+cc -Wall -Wextra -Werror -I include -I libft/include \
+    tests/unit/test_builtins.c $CORE_SRCS libft/libft.a $RL_FLAGS \
+    -o /tmp/minishell_unit_builtins
+run_with_leak_check /tmp/minishell_unit_builtins
+rm -f /tmp/minishell_unit_builtins

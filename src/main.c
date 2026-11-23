@@ -17,7 +17,10 @@ volatile sig_atomic_t	g_signal_num = 0;
 static int	init_shell(t_shell *ctx, char **envp)
 {
 	ft_bzero(ctx, sizeof(t_shell));
+	ctx->saved_in = -1;
+	ctx->saved_out = -1;
 	ctx->env_list = init_env_list(envp);
+	init_env_defaults(ctx);
 	ctx->is_interactive = isatty(STDIN_FILENO);
 	ctx->cwd = getcwd(NULL, 0);
 	if (ctx->is_interactive)
@@ -28,7 +31,7 @@ static int	init_shell(t_shell *ctx, char **envp)
 static void	cleanup_shell(t_shell *ctx)
 {
 	free_child_resources(ctx);
-	if (ctx->is_interactive)
+	if (ctx->is_interactive && !ctx->in_subshell)
 	{
 		rl_clear_history();
 		restore_terminal(&ctx->orig_term);

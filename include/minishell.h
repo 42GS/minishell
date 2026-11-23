@@ -39,6 +39,10 @@ typedef struct s_shell
 	char			*cwd;
 	char			*line;
 	bool			is_interactive;
+	bool			in_subshell;
+	bool			has_backup_fds;
+	int				saved_in;
+	int				saved_out;
 	t_ast_node		*current_ast;
 	t_token			*current_tokens;
 	struct termios	orig_term;

@@ -41,6 +41,7 @@ static void	run_pipe_node(t_pipe_ctx *pctx, int idx, t_shell *ctx)
 	free(pctx->cmds);
 	free(pctx->pids);
 	free(pctx->pipes);
+	ctx->in_subshell = true;
 	if (cmd->type == NODE_CMD)
 		exec_cmd_in_child(cmd, ctx);
 	if (apply_redirections(cmd->redirs, ctx) != 0)

@@ -12,40 +12,44 @@
 
 #include "minishell.h"
 
-static void	restore_std_fds(int saved_in, int saved_out)
+static void	restore_std_fds(t_shell *ctx)
 {
-	if (saved_in >= 0)
+	if (!ctx->has_backup_fds)
+		return ;
+	if (ctx->saved_in >= 0)
 	{
-		dup2(saved_in, STDIN_FILENO);
-		close(saved_in);
+		dup2(ctx->saved_in, STDIN_FILENO);
+		close(ctx->saved_in);
 	}
-	if (saved_out >= 0)
+	if (ctx->saved_out >= 0)
 	{
-		dup2(saved_out, STDOUT_FILENO);
-		close(saved_out);
+		dup2(ctx->saved_out, STDOUT_FILENO);
+		close(ctx->saved_out);
 	}
+	ctx->saved_in = -1;
+	ctx->saved_out = -1;
+	ctx->has_backup_fds = false;
 }
 
 static int	execute_single_builtin(t_ast_node *cmd, t_shell *ctx)
 {
-	int	saved_in;
-	int	saved_out;
 	int	status;
 
-	saved_in = dup(STDIN_FILENO);
-	saved_out = dup(STDOUT_FILENO);
-	if (saved_in == -1 || saved_out == -1)
+	ctx->saved_in = dup(STDIN_FILENO);
+	ctx->saved_out = dup(STDOUT_FILENO);
+	ctx->has_backup_fds = true;
+	if (ctx->saved_in == -1 || ctx->saved_out == -1)
 	{
-		restore_std_fds(saved_in, saved_out);
+		restore_std_fds(ctx);
 		return (1);
 	}
 	if (apply_redirections(cmd->redirs, ctx) != 0)
 	{
-		restore_std_fds(saved_in, saved_out);
+		restore_std_fds(ctx);
 		return (1);
 	}
-	status = dispatch_builtin(cmd->argv, ctx, false);
-	restore_std_fds(saved_in, saved_out);
+	status = dispatch_builtin(cmd->argv, ctx, ctx->in_subshell);
+	restore_std_fds(ctx);
 	return (status);
 }
 
@@ -84,6 +88,7 @@ static int	execute_subshell(t_ast_node *node, t_shell *ctx)
 	}
 	if (pid == 0)
 	{
+		ctx->in_subshell = true;
 		if (apply_redirections(node->redirs, ctx) != 0)
 		{
 			free_child_resources(ctx);

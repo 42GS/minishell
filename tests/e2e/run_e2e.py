@@ -50,6 +50,13 @@ def main():
             ("heredoc_basic", "cat << EOF\nhd_line1\nhd_line2\nEOF\n"),
             ("cmd_not_found_127", "nonexistent_ci_cmd_xyz\n"),
             ("syntax_error_2", "cat | | wc\n"),
+            ("builtin_echo_n", "echo -n hello\necho -nnnn -nn world\necho -na literal\n"),
+            ("builtin_cd_pwd", "cd ..\npwd\ncd -\npwd\n"),
+            ("builtin_export_unset", "export CI_K=val1\nexport CI_K+=_2\nexport CI_K\nenv | grep CI_K\nunset CI_K\nenv | grep CI_K\n"),
+            ("builtin_redir_parent_fd", "echo redir_bi > /tmp/ms_ci_bi.txt\necho parent_ok\ncat < /tmp/ms_ci_bi.txt\nrm -f /tmp/ms_ci_bi.txt\n"),
+            ("builtin_exit_mod", "exit 259\n"),
+            ("builtin_exit_many_stay", "exit 1 2\necho alive\n"),
+            ("builtin_exit_non_num", "exit not_a_num\n"),
         ]
         for name, script in smoke_cases:
             b_rc, b_out, _ = run_shell("bash", script)
