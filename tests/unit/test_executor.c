@@ -63,11 +63,11 @@ static void	test_multi_stage_pipe_no_hang(t_shell *ctx)
 
 static void	test_path_edge_cases(t_shell *ctx)
 {
-	char	*orig_path;
-	int		fd;
+	int	fd;
 
-	orig_path = ft_strdup(env_get(ctx->env_list, "PATH"));
 	assert(run_line_ctx("..", ctx) == 127);
+	assert(env_set(&ctx->env_list, "MS_ORIG_PATH",
+			env_get(ctx->env_list, "PATH")) == 0);
 	mkdir("/tmp/ms_u_p1", 0755);
 	mkdir("/tmp/ms_u_p2", 0755);
 	mkdir("/tmp/ms_u_p1/shadow_u", 0755);
@@ -83,8 +83,9 @@ static void	test_path_edge_cases(t_shell *ctx)
 	assert(run_line_ctx("noexec_u", ctx) == 126);
 	assert(env_set(&ctx->env_list, "PATH", "/tmp/ms_u_p1:/tmp/ms_u_p2") == 0);
 	assert(run_line_ctx("shadow_u", ctx) == 0);
-	env_set(&ctx->env_list, "PATH", orig_path);
-	free(orig_path);
+	assert(env_set(&ctx->env_list, "PATH",
+			env_get(ctx->env_list, "MS_ORIG_PATH")) == 0);
+	env_unset(&ctx->env_list, "MS_ORIG_PATH");
 	unlink("/tmp/ms_u_p1/noexec_u");
 	rmdir("/tmp/ms_u_p1/shadow_u");
 	unlink("/tmp/ms_u_p2/shadow_u");
