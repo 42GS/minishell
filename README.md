@@ -1,7 +1,7 @@
 # Minishell — As Beautiful as a Shell
 
 [![CI](https://github.com/42GS/minishell/actions/workflows/ci.yml/badge.svg)](https://github.com/42GS/minishell/actions/workflows/ci.yml)
-[![Release](https://img.shields.io/github/v/release/42GS/minishell)](https://github.com/42GS/minishell/releases/tag/v1.0.0)
+[![Release](https://img.shields.io/github/v/release/42GS/minishell)](https://github.com/42GS/minishell/releases/latest)
 [![C / POSIX](https://img.shields.io/badge/C-POSIX.1--2017-blue)](https://github.com/42GS/minishell)
 [![42 Norminette](https://img.shields.io/badge/42%20Norminette-0%20errors-brightgreen)](https://github.com/42GS/minishell/actions/workflows/ci.yml)
 [![Valgrind QA](https://img.shields.io/badge/Valgrind-0%20heap%20%26%20FD%20leaks-brightgreen)](https://github.com/42GS/minishell/actions/workflows/ci.yml)
@@ -20,10 +20,12 @@
 | 검증 항목 | 측정 결과 | 비고 |
 | :--- | :--- | :--- |
 | **프로덕션 코드 규모** | `51 .c` / `7 .h` (`4,476` LOC), 코어(`libft` 제외) **`3,896` LOC** | `189`개 함수, 42 Norminette `0` errors (`<= 25`줄/함수, `<= 5`함수/파일) |
+| **코드 문서화 (`Doxygen`)** | **58개 전 파일** 영문 `/** ... */` 주석 적용 | 실행 코드·42 헤더 변경 0건, GlobalScope·78자 Norminette 통과 |
 | **전역 변수 격리 (`nm -g`)** | 단일 전역 변수 **1개** (`volatile sig_atomic_t g_signal_num`) | 셸 컨텍스트(`t_shell`)는 포인터 인자로만 전달 |
 | **외부 심볼 준수 (`nm -u`)** | 허용 심볼 **33종** (금지 심볼 **0건**) | 42 허용 외부 함수 53종(`realloc` 등 금지 제외) 엄격 준수 |
 | **42evalhub 5대 E2E 벤치마크** | **37 / 37 (100.0%)**, 크래시·타임아웃 0건 | `LC_ALL=C` 환경 GNU Bash 1:1 차등 비교 (`tests/e2e/suites/01~05`) |
 | **메모리 및 FD 누수 (Valgrind)** | `definitely lost: 0` / 열린 잔여 FD **0건** | 7종 C 단위 테스트 + 13종 Mandatory·Bonus·Error QA 통과 |
+| **CI 파이프라인 실행 속도** | **`29 ~ 36s`** (`main` / PR) | `77 ~ 80s` 대비 최대 **-62.3%** (`ghcr.io/42gs/minishell-ci` + 병렬화) |
 
 ---
 
@@ -73,6 +75,10 @@ flowchart LR
 5. **Strict Pipe-Close 프로토콜 & 단일 빌트인 FD 최적화**
    - 파이프 자식은 자신의 표준 입출력 `dup2()` 완료 직후 부모로부터 상속받은 모든 파이프 FD를 닫고, 부모 역시 포크 완료 즉시 모든 파이프 양끝을 닫아 `EOF` 미수신 행(Hang)을 방지합니다.
    - 파이프라인 밖 단일 빌트인은 부모 상태를 직접 변경해야 하므로 리다이렉션이 있을 때만 `dup(STDIN_FILENO)`/`dup(STDOUT_FILENO)`로 백업·복원하고, 리다이렉션이 없는 경우에는 `execute_single_builtin()`에서 `dup` 비용 없이 즉시 디스패치합니다.
+6. **실측 기반 GHCR 커스텀 CI 이미지 및 테스트 병렬화 (`77~80s -> 29~36s`)**
+   - GitHub Actions API 스텝별 소요 시간을 계측해 실제 병목(`needs: norminette` 직렬 대기 `+20s`, 매 실행 `apt-get` `22~25s`, 유닛 테스트 38개 코어 소스 4회 중복 컴파일 `10~11s`, Valgrind 26회 직렬 실행 `15s`)을 특정했습니다.
+   - `debian:bookworm-slim` + `libc6-dbg` 기반 경량 이미지(`ghcr.io/42gs/minishell-ci:latest`, 빌드 시 `valgrind --error-exitcode=42 /bin/true` 자가 검증)와 `needs` 제거 병렬 실행, `run_unit.sh` `obj/**/*.o` 정적 아카이브 재사용 링크(`11s -> 4s`), `run_valgrind_qa.sh` 멀티코어 병렬 워커(`15s -> 4~7s`)를 적용해 전체 CI 시간을 최대 **62.3%** 단축했습니다.
+   - 병렬화 과정에서 확인한 GNU Make `re: fclean all`의 `-j` 레이스 조건(병렬 `make -j all`과 순차 `make re` 분리) 및 Valgrind 3.19(Debian `--log-file` FD 3) vs 3.26(Ubuntu `dup2`) 동작 차이를 모두 반영해 양쪽 환경 호환성을 확보했습니다.
 
 ---
 
