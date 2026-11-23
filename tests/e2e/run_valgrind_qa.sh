@@ -72,7 +72,7 @@ run_vg_case() {
 
     open_fds="$(grep -oE "FILE DESCRIPTORS: [0-9]+" "$fd_log" | tail -n 1 | awk '{print $3}')"
     open_fds="${open_fds:-$BASE_FDS}"
-    if [ "$open_fds" -gt "$BASE_FDS" ] || grep -Eq "Open file descriptor ([3-9]|[1-9][0-9]+):" "$fd_log"; then
+    if [ "$open_fds" -gt "$BASE_FDS" ] || grep -E "Open file descriptor ([3-9]|[1-9][0-9]+):" "$fd_log" | grep -qvF "$fd_log"; then
         {
             echo "[FAIL] Valgrind QA ($name): leaked FDs (open=$open_fds > base=$BASE_FDS)"
             cat "$fd_log"
