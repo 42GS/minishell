@@ -1,27 +1,26 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   builtins_stub.c                                    :+:      :+:    :+:   */
+/*   builtin_unset.c                                    :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: yoshin <yoshin@student.42gyeongsan.kr>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2026/11/22 22:10:00 by yoshin            #+#    #+#             */
-/*   Updated: 2026/11/22 22:10:00 by yoshin           ###   ########.fr       */
+/*   Created: 2026/11/23 00:08:00 by yoshin            #+#    #+#             */
+/*   Updated: 2026/11/23 00:08:00 by yoshin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "minishell.h"
 
-bool	is_builtin(const char *cmd_name)
+int	ft_unset(char **argv, t_shell *ctx)
 {
-	(void)cmd_name;
-	return (false);
-}
+	int	i;
 
-int	dispatch_builtin(char **argv, t_shell *ctx, bool in_child)
-{
-	(void)argv;
-	(void)ctx;
-	(void)in_child;
+	i = 1;
+	while (argv[i])
+	{
+		env_unset(&ctx->env_list, argv[i]);
+		i++;
+	}
 	return (0);
 }

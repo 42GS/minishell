@@ -53,8 +53,18 @@ SRCS		= $(SRC_DIR)/main.c \
 			  $(SRC_DIR)/expander/expander.c \
 			  $(SRC_DIR)/expander/expander_utils.c \
 			  $(SRC_DIR)/env/env_core.c \
+			  $(SRC_DIR)/env/env_ops.c \
+			  $(SRC_DIR)/env/env_init.c \
 			  $(SRC_DIR)/env/env_array.c \
-			  $(SRC_DIR)/builtins/builtins_stub.c \
+			  $(SRC_DIR)/builtins/builtins.c \
+			  $(SRC_DIR)/builtins/builtin_echo.c \
+			  $(SRC_DIR)/builtins/builtin_cd.c \
+			  $(SRC_DIR)/builtins/builtin_pwd.c \
+			  $(SRC_DIR)/builtins/builtin_export.c \
+			  $(SRC_DIR)/builtins/builtin_export_print.c \
+			  $(SRC_DIR)/builtins/builtin_unset.c \
+			  $(SRC_DIR)/builtins/builtin_env.c \
+			  $(SRC_DIR)/builtins/builtin_exit.c \
 			  $(SRC_DIR)/signals/signals_stub.c
 
 OBJS		= $(SRCS:$(SRC_DIR)/%.c=$(OBJ_DIR)/%.o)

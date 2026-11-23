@@ -31,6 +31,14 @@ void	free_child_resources(t_shell *ctx)
 {
 	if (!ctx)
 		return ;
+	if (ctx->has_backup_fds)
+	{
+		if (ctx->saved_in >= 0)
+			close(ctx->saved_in);
+		if (ctx->saved_out >= 0)
+			close(ctx->saved_out);
+		ctx->has_backup_fds = false;
+	}
 	free(ctx->line);
 	ctx->line = NULL;
 	free_ast(&ctx->current_ast);
