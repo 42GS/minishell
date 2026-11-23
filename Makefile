@@ -27,7 +27,8 @@ LIBFT_SRCS	= $(LIBFT_DIR)/src/ft_strlen.c \
 			  $(LIBFT_DIR)/src/ft_put_fd.c \
 			  $(LIBFT_DIR)/src/ft_ischar.c \
 			  $(LIBFT_DIR)/src/ft_itoa.c \
-			  $(LIBFT_DIR)/src/ft_split.c
+			  $(LIBFT_DIR)/src/ft_split.c \
+			  $(LIBFT_DIR)/src/ft_strbuf.c
 
 INC_FLAGS	= -I include -I $(LIBFT_DIR)/include $(RL_INC)
 

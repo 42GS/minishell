@@ -56,6 +56,7 @@ t_token	*tokenize_input(const char *input, int *err_code);
 void	free_tokens(t_token **tokens);
 
 int		is_lexer_space(char c);
+int		step_quote(char c, t_quote_state *st);
 int		is_operator_start(const char *s);
 int		extract_word_token(const char *in, size_t *i, t_token **head);
 int		extract_op_token(const char *in, size_t *i, t_token **head);

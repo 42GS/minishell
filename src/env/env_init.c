@@ -14,8 +14,20 @@
 
 static const char	*skip_shlvl_spaces(const char *s)
 {
-	while (*s == ' ' || (*s >= '\t' && *s <= '\r'))
+	while (is_lexer_space(*s))
 		s++;
+	return (s);
+}
+
+static const char	*parse_shlvl_sign(const char *s, int *sign)
+{
+	*sign = 1;
+	if (*s == '-' || *s == '+')
+	{
+		if (*s == '-')
+			*sign = -1;
+		s++;
+	}
 	return (s);
 }
 
@@ -26,14 +38,7 @@ static bool	parse_shlvl_val(const char *s, int *out)
 
 	if (!s || !*s)
 		return (false);
-	s = skip_shlvl_spaces(s);
-	sign = 1;
-	if (*s == '-' || *s == '+')
-	{
-		if (*s == '-')
-			sign = -1;
-		s++;
-	}
+	s = parse_shlvl_sign(skip_shlvl_spaces(s), &sign);
 	if (!ft_isdigit((unsigned char)*s))
 		return (false);
 	val = 0;

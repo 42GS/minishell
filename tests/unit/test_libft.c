@@ -46,11 +46,33 @@ static void	test_itoa_and_split(void)
 	free(parts);
 }
 
+static void	test_strbuf_scaling(void)
+{
+	t_strbuf	sb;
+	int			i;
+
+	ft_bzero(&sb, sizeof(t_strbuf));
+	assert(sb_reserve(&sb, 0) == 1);
+	assert(sb.data != NULL && sb.len == 0 && strcmp(sb.data, "") == 0);
+	i = 0;
+	while (i < 10000)
+	{
+		assert(sb_push_char(&sb, (char)('a' + (i % 26))) == 1);
+		i++;
+	}
+	assert(sb.len == 10000 && sb.cap >= 10001);
+	assert(sb_push_str(&sb, "_end") == 1);
+	assert(sb.len == 10004 && strcmp(sb.data + 10000, "_end") == 0);
+	sb_free(&sb);
+	assert(sb.data == NULL && sb.len == 0 && sb.cap == 0);
+}
+
 int	main(void)
 {
 	printf("[UNIT] Running libft core tests...\n");
 	test_string_utils();
 	test_itoa_and_split();
+	test_strbuf_scaling();
 	printf("[UNIT] All libft unit tests PASSED!\n");
 	return (0);
 }

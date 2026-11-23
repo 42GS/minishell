@@ -14,27 +14,10 @@
 
 static int	parse_redir_list(t_token **curr, t_redir **redirs, int *err)
 {
-	t_token_type	op_type;
-	t_redir			*node;
-
 	while (*curr && is_redir_token((*curr)->type))
 	{
-		op_type = (*curr)->type;
-		*curr = (*curr)->next;
-		if (!*curr || (*curr)->type != TOK_WORD)
-		{
-			parser_syntax_error(*curr, err);
+		if (!parse_single_redir(curr, redirs, err))
 			return (0);
-		}
-		node = create_redir_node(op_type, *curr);
-		if (!node)
-		{
-			if (err)
-				*err = 1;
-			return (0);
-		}
-		append_redir(redirs, node);
-		*curr = (*curr)->next;
 	}
 	return (1);
 }

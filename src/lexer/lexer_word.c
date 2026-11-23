@@ -12,22 +12,29 @@
 
 #include "minishell.h"
 
+int	step_quote(char c, t_quote_state *st)
+{
+	if (*st == STATE_GENERAL && c == '\'')
+		*st = STATE_SQUOTE;
+	else if (*st == STATE_SQUOTE && c == '\'')
+		*st = STATE_GENERAL;
+	else if (*st == STATE_GENERAL && c == '"')
+		*st = STATE_DQUOTE;
+	else if (*st == STATE_DQUOTE && c == '"')
+		*st = STATE_GENERAL;
+	else
+		return (0);
+	return (1);
+}
+
 static void	update_quote_state(char c, t_quote_state *state, int *quoted)
 {
-	if (*state == STATE_GENERAL && c == '\'')
-	{
-		*state = STATE_SQUOTE;
+	if (!step_quote(c, state))
+		return ;
+	if (*state == STATE_SQUOTE)
 		*quoted |= QUOTE_SINGLE;
-	}
-	else if (*state == STATE_SQUOTE && c == '\'')
-		*state = STATE_GENERAL;
-	else if (*state == STATE_GENERAL && c == '"')
-	{
-		*state = STATE_DQUOTE;
+	else if (*state == STATE_DQUOTE)
 		*quoted |= QUOTE_DOUBLE;
-	}
-	else if (*state == STATE_DQUOTE && c == '"')
-		*state = STATE_GENERAL;
 }
 
 static int	scan_word_end(const char *in, size_t *i, int *quoted)
