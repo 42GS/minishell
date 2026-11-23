@@ -6,23 +6,26 @@ on:
   pull_request:
     branches: [ main ]
 
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  packages: read
+
 jobs:
   norminette:
     name: Norminette Check
     runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/42gs/minishell-ci:latest
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
-
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.10'
-
-      - name: Install Norminette
-        run: |
-          python -m pip install --upgrade pip
-          pip install norminette
 
       - name: Run Norminette
         run: |
@@ -31,19 +34,18 @@ jobs:
   build_and_test:
     name: Strict Build & Leak Verification
     runs-on: ubuntu-latest
-    needs: norminette
+    container:
+      image: ghcr.io/42gs/minishell-ci:latest
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Install Dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libreadline-dev valgrind
-
       - name: Build Mandatory (-Wall -Wextra -Werror)
         run: |
-          make all
+          make -j"$(nproc)" all
 
       - name: Verify No-Relink (make all)
         run: |
@@ -53,7 +55,7 @@ jobs:
 
       - name: Build Bonus & Verify No-Relink (make bonus)
         run: |
-          make bonus
+          make -j"$(nproc)" bonus
           out=$(make bonus)
           echo "$out"
           echo "$out" | grep -q "Nothing to be done" || (echo "Relink detected on make bonus!" && exit 1)
