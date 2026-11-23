@@ -17,6 +17,8 @@ SUITES_DIR = os.path.join(os.path.dirname(__file__), "suites")
 
 
 def run_shell(cmd_bin: str, script: str, timeout: int = 5):
+    env = os.environ.copy()
+    env["LC_ALL"] = "C"
     proc = subprocess.run(
         [cmd_bin],
         input=script,
@@ -25,6 +27,7 @@ def run_shell(cmd_bin: str, script: str, timeout: int = 5):
         text=True,
         timeout=timeout,
         cwd=ROOT_DIR,
+        env=env,
     )
     return proc.returncode, proc.stdout, proc.stderr
 
@@ -82,6 +85,13 @@ def main():
             ("bonus_subshell_redir", "(echo l1 && echo l2) > /tmp/ms_ci_sub.txt\n(cat && echo l3) < /tmp/ms_ci_sub.txt\nrm -f /tmp/ms_ci_sub.txt\n"),
             ("bonus_subshell_pipe", "(echo a && echo b) | tr a-z A-Z\nprintf \"x\\ny\\n\" | (cat && echo z)\n"),
             ("bonus_subshell_heredoc", "(cat << A && cat << B)\nfirst\nA\nsecond\nB\n(cat && echo tail) << C\nhd_sub\nC\n"),
+            ("bonus_glob_make", "echo Make*\n"),
+            ("bonus_glob_all_cwd", "echo *\n"),
+            ("bonus_glob_dotfiles", "echo .*\n"),
+            ("bonus_glob_quoted_suppress", "echo \"*\" '*' \"Make\"* Make\"*\"\n"),
+            ("bonus_glob_nomatch_fallback", "echo nonexistent_glob_xyz_*\n"),
+            ("bonus_glob_var_unquoted_vs_quoted", "export G=\"Make*\"\necho $G \"$G\"\n"),
+            ("bonus_glob_redir_single_and_ambig", "wc -l < Make*\ncat < *\n"),
         ]
         for name, script in smoke_cases:
             b_rc, b_out, _ = run_shell("bash", script)

@@ -14,34 +14,48 @@
 
 static int	flush_cur_field(t_exp_buf *b)
 {
+	int	ok;
+
 	if (!b->cur.data)
 		return (1);
-	if (!append_str_to_argv(&b->fields, b->cur.data))
-		return (0);
+	if (b->has_wild)
+		ok = expand_glob_field(b->cur.data, b->mask.data, &b->fields);
+	else
+		ok = append_str_to_argv(&b->fields, b->cur.data);
 	sb_free(&b->cur);
-	return (1);
+	sb_free(&b->mask);
+	b->has_wild = false;
+	return (ok);
 }
 
-static int	push_char_to_cur(t_exp_buf *b, char c)
+static int	push_char_to_cur(t_exp_buf *b, char c, bool wild)
 {
+	char	m;
+
 	if (c == '\0')
-		return (sb_reserve(&b->cur, 0));
-	return (sb_push_char(&b->cur, c));
+		return (sb_reserve(&b->cur, 0) && sb_reserve(&b->mask, 0));
+	m = '0';
+	if (wild && c == '*')
+	{
+		m = '1';
+		b->has_wild = true;
+	}
+	return (sb_push_char(&b->cur, c) && sb_push_char(&b->mask, m));
 }
 
-static int	feed_split_chunk(t_exp_buf *b, char *chunk)
+static int	feed_chunk(t_exp_buf *b, char *chunk, bool split)
 {
 	size_t	k;
 	int		ok;
 
+	ok = (split || push_char_to_cur(b, '\0', false));
 	k = 0;
-	ok = 1;
 	while (ok && chunk[k])
 	{
-		if (chunk[k] == ' ' || chunk[k] == '\t' || chunk[k] == '\n')
+		if (split && (chunk[k] == ' ' || chunk[k] == '\t' || chunk[k] == '\n'))
 			ok = flush_cur_field(b);
 		else
-			ok = push_char_to_cur(b, chunk[k]);
+			ok = push_char_to_cur(b, chunk[k], split);
 		k++;
 	}
 	free(chunk);
@@ -67,9 +81,7 @@ static int	step_expand_dollar(const char *raw, size_t *i, t_exp_buf *b,
 	chunk = expand_dollar(raw, i, ctx);
 	if (!chunk)
 		return (0);
-	if (split)
-		return (feed_split_chunk(b, chunk));
-	return (sb_push_str_free(&b->cur, chunk));
+	return (feed_chunk(b, chunk, split));
 }
 
 char	**expand_word_fields(const char *raw, t_shell *ctx, int *err)
@@ -85,15 +97,16 @@ char	**expand_word_fields(const char *raw, t_shell *ctx, int *err)
 	while (ok && raw && raw[i])
 	{
 		if (step_quote(raw[i], &b.st) && ++i)
-			ok = push_char_to_cur(&b, '\0');
+			ok = push_char_to_cur(&b, '\0', false);
 		else if (raw[i] == '$' && b.st != STATE_SQUOTE)
 			ok = step_expand_dollar(raw, &i, &b, ctx);
 		else
-			ok = push_char_to_cur(&b, raw[i++]);
+			ok = push_char_to_cur(&b, raw[i++], b.st == STATE_GENERAL);
 	}
 	if (ok && flush_cur_field(&b))
 		return (b.fields);
 	sb_free(&b.cur);
+	sb_free(&b.mask);
 	free_str_array(b.fields);
 	*err = 1;
 	return (NULL);
