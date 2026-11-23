@@ -61,7 +61,8 @@ CORE_SRCS="src/shell_utils.c \
     src/parser/parser_ast.c src/parser/parser_utils.c \
     src/executor/executor.c src/executor/executor_pipe.c \
     src/executor/executor_pipe_child.c src/executor/executor_wait.c \
-    src/executor/executor_path.c src/executor/executor_redir.c \
+    src/executor/executor_path.c src/executor/executor_path_utils.c \
+    src/executor/executor_redir.c \
     src/executor/executor_heredoc.c src/executor/executor_heredoc_child.c \
     src/expander/expander.c src/expander/expander_utils.c \
     src/expander/expander_split.c src/expander/expander_cmd.c \

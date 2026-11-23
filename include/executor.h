@@ -53,6 +53,9 @@ void	exec_cmd_in_child(t_ast_node *cmd, t_shell *ctx);
 void	print_exec_error(const char *cmd, const char *msg);
 void	run_heredoc_child(int fds[2], t_redir *redir, t_shell *ctx);
 void	close_ast_heredocs(t_ast_node *node);
+char	*extract_path_dir(const char *p, size_t *pos, bool *done);
+char	*join_path_cmd(char *dir, const char *cmd);
+int		check_candidate(char *cand, char **denied);
 
 int		step_quote(char c, t_quote_state *st);
 char	*expand_dollar(const char *s, size_t *i, t_shell *ctx);

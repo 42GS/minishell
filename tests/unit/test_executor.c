@@ -61,6 +61,37 @@ static void	test_multi_stage_pipe_no_hang(t_shell *ctx)
 	assert(rc == 0);
 }
 
+static void	test_path_edge_cases(t_shell *ctx)
+{
+	char	*orig_path;
+	int		fd;
+
+	orig_path = ft_strdup(env_get(ctx->env_list, "PATH"));
+	assert(run_line_ctx("..", ctx) == 127);
+	mkdir("/tmp/ms_u_p1", 0755);
+	mkdir("/tmp/ms_u_p2", 0755);
+	mkdir("/tmp/ms_u_p1/shadow_u", 0755);
+	fd = open("/tmp/ms_u_p1/noexec_u", O_WRONLY | O_CREAT | O_TRUNC, 0644);
+	assert(fd >= 0);
+	close(fd);
+	fd = open("/tmp/ms_u_p2/shadow_u", O_WRONLY | O_CREAT | O_TRUNC, 0755);
+	assert(fd >= 0);
+	assert(write(fd, "#!/bin/sh\nexit 0\n", 17) == 17);
+	close(fd);
+	assert(env_set(&ctx->env_list, "PATH", "/tmp/ms_u_p1") == 0);
+	assert(run_line_ctx("shadow_u", ctx) == 127);
+	assert(run_line_ctx("noexec_u", ctx) == 126);
+	assert(env_set(&ctx->env_list, "PATH", "/tmp/ms_u_p1:/tmp/ms_u_p2") == 0);
+	assert(run_line_ctx("shadow_u", ctx) == 0);
+	env_set(&ctx->env_list, "PATH", orig_path);
+	free(orig_path);
+	unlink("/tmp/ms_u_p1/noexec_u");
+	rmdir("/tmp/ms_u_p1/shadow_u");
+	unlink("/tmp/ms_u_p2/shadow_u");
+	rmdir("/tmp/ms_u_p1");
+	rmdir("/tmp/ms_u_p2");
+}
+
 int	main(int argc, char **argv, char **envp)
 {
 	t_shell	ctx;
@@ -73,6 +104,7 @@ int	main(int argc, char **argv, char **envp)
 	test_path_and_status_codes(&ctx);
 	test_pipeline_status_propagation(&ctx);
 	test_multi_stage_pipe_no_hang(&ctx);
+	test_path_edge_cases(&ctx);
 	free_child_resources(&ctx);
 	printf("[UNIT] All Executor & Pipeline unit tests PASSED!\n");
 	return (0);

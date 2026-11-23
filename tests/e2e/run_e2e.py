@@ -65,6 +65,11 @@ def main():
             ("exp_dollar_quotes_digit", "echo $\"hello\" $'world' \"$\"\"a\" $1abc $9x\n"),
             ("exp_ambig_redir", "echo hi > $UNDEF_CI_99\nexport F=\"ci_a ci_b\"\necho hi > $F\n"),
             ("exp_export_no_split", "export V=\"a b\"\nexport K=$V\necho \"[$K]\"\n"),
+            ("path_dotdot_127", "..\n"),
+            ("path_dir_in_path_127", "export PATH=.:$PATH\nsrc\n"),
+            ("path_empty_seg_lead", "export PATH=:/bin:/usr/bin\nminishell < /dev/null\n"),
+            ("path_empty_seg_trail", "export PATH=/bin:/usr/bin:\nminishell < /dev/null\n"),
+            ("path_noexec_126", "touch /tmp/ms_ci_noexec\nchmod 644 /tmp/ms_ci_noexec\nexport PATH=/tmp:$PATH\nms_ci_noexec\necho rc=$?\nrm -f /tmp/ms_ci_noexec\n"),
         ]
         for name, script in smoke_cases:
             b_rc, b_out, _ = run_shell("bash", script)
