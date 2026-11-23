@@ -12,6 +12,18 @@
 
 #include "minishell.h"
 
+/**
+ * @file parser.c
+ * @brief Recursive-descent parser enforcing shell operator precedence.
+ */
+
+/**
+ * @brief  Parse zero or more trailing redirections into @p redirs.
+ * @param  curr    In/out token cursor advanced past parsed redirections.
+ * @param  redirs  Destination redirection list head.
+ * @param  err     Set to 2 on syntax error or 1 on allocation failure.
+ * @return 1 on success, 0 on error.
+ */
 static int	parse_redir_list(t_token **curr, t_redir **redirs, int *err)
 {
 	while (*curr && is_redir_token((*curr)->type))
@@ -22,6 +34,12 @@ static int	parse_redir_list(t_token **curr, t_redir **redirs, int *err)
 	return (1);
 }
 
+/**
+ * @brief  Parse a parenthesized subshell `( list ) [redirs]`.
+ * @param  curr  Token cursor initially pointing to `TOK_LPAREN`.
+ * @param  err   Set to 2 on missing `)` / bad redir or 1 on OOM.
+ * @return `NODE_SUBSHELL` AST node, or NULL on error (partial AST freed).
+ */
 static t_ast_node	*parse_subshell(t_token **curr, int *err)
 {
 	t_ast_node	*sub;
@@ -50,6 +68,12 @@ static t_ast_node	*parse_subshell(t_token **curr, int *err)
 	return (node);
 }
 
+/**
+ * @brief  Parse a primary command unit: subshell or simple command.
+ * @param  curr  Token cursor at the start of the command unit.
+ * @param  err   Set to 2 on unexpected token (`TOK_AMP`, `)`, `|`, EOF).
+ * @return Parsed AST node, or NULL on syntax/allocation error.
+ */
 static t_ast_node	*parse_command(t_token **curr, int *err)
 {
 	if (!*curr)
@@ -61,6 +85,12 @@ static t_ast_node	*parse_command(t_token **curr, int *err)
 	return (parser_syntax_error(*curr, err));
 }
 
+/**
+ * @brief  Parse a left-associative pipeline (`cmd ( '|' cmd )*`).
+ * @param  curr  In/out token cursor.
+ * @param  err   Propagates syntax error 2 or allocation error 1.
+ * @return Root of the pipeline subtree, or NULL on error (no leaks).
+ */
 static t_ast_node	*parse_pipeline(t_token **curr, int *err)
 {
 	t_ast_node	*left;
@@ -80,6 +110,15 @@ static t_ast_node	*parse_pipeline(t_token **curr, int *err)
 	return (left);
 }
 
+/**
+ * @brief  Parse left-associative `&&` / `||` lists (lowest precedence).
+ * @param  curr  In/out token cursor.
+ * @param  err   Propagates syntax error 2 or allocation error 1.
+ * @return AST root of the parsed list, or NULL on error.
+ *
+ * Enforces shell precedence: `(...)` and simple commands with redirections
+ * bind tighter than `|`, which binds tighter than `&&` and `||`.
+ */
 t_ast_node	*parse_and_or(t_token **curr, int *err)
 {
 	t_ast_node	*left;

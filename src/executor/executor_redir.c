@@ -12,6 +12,12 @@
 
 #include "minishell.h"
 
+/**
+ * @file executor_redir.c
+ * @brief File/here-doc redirection application and child command execution.
+ */
+
+/** @brief Open a redirection file path with POSIX flags and mode 0644. */
 static int	open_redir_file(t_redir *redir, const char *path)
 {
 	if (redir->type == REDIR_IN)
@@ -21,6 +27,14 @@ static int	open_redir_file(t_redir *redir, const char *path)
 	return (open(path, O_WRONLY | O_CREAT | O_APPEND, 0644));
 }
 
+/**
+ * @brief  Attach a pre-collected here-doc FD to STDIN and close the original.
+ * @param  redir  REDIR_HEREDOC entry holding heredoc_fd.
+ * @return 0 on success, 1 if heredoc_fd is invalid or dup2() fails.
+ *
+ * Resets heredoc_fd to -1 after closing so repeated cleanup passes never
+ * double-close an already released descriptor.
+ */
 static int	apply_heredoc_fd(t_redir *redir)
 {
 	if (redir->heredoc_fd < 0)
@@ -32,6 +46,12 @@ static int	apply_heredoc_fd(t_redir *redir)
 	return (0);
 }
 
+/**
+ * @brief  Expand and apply a single file or here-doc redirection entry.
+ * @param  redir  Redirection descriptor to apply.
+ * @param  ctx    Shell context used for target expansion.
+ * @return 0 on success, 1 on expansion, open, or dup2 failure.
+ */
 static int	apply_single_redir(t_redir *redir, t_shell *ctx)
 {
 	char	*path;
@@ -60,6 +80,15 @@ static int	apply_single_redir(t_redir *redir, t_shell *ctx)
 	return (ret);
 }
 
+/**
+ * @brief  Apply a linked list of redirections in left-to-right order.
+ * @param  redirs  Head of the redirection list (may be NULL).
+ * @param  ctx     Shell context passed to target expansion.
+ * @return 0 if all redirections succeeded, 1 at the first failure.
+ *
+ * Sequential order ensures later redirections override earlier ones on the
+ * same FD and aborts immediately when any open fails, matching Bash.
+ */
 int	apply_redirections(t_redir *redirs, t_shell *ctx)
 {
 	while (redirs)
@@ -71,6 +100,15 @@ int	apply_redirections(t_redir *redirs, t_shell *ctx)
 	return (0);
 }
 
+/**
+ * @brief  Execute a simple command inside an already-forked child process.
+ * @param  cmd  Simple command AST node.
+ * @param  ctx  Shell context cleaned via exit_child_clean() on every exit.
+ *
+ * Applies redirections, then calls close_ast_heredocs() so no unused here-doc
+ * FDs remain open across execve(). Dispatches builtins or resolves PATH and
+ * calls execve(), exiting 126 if execve() itself fails. Never returns.
+ */
 void	exec_cmd_in_child(t_ast_node *cmd, t_shell *ctx)
 {
 	char	*path;

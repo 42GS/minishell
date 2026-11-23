@@ -12,6 +12,21 @@
 
 #include "minishell.h"
 
+/**
+ * @file expander_split.c
+ * @brief Quote-aware IFS word splitting and parallel wildcard mask builder.
+ */
+
+/**
+ * @brief  Finalize the accumulated field in @p b and reset its buffers.
+ *
+ * Skips flushing when b->cur.data is NULL (no characters or quoted empty
+ * string encountered). Dispatches to expand_glob_field() when unquoted '*'
+ * was recorded, otherwise appends the literal field directly.
+ *
+ * @param  b  Expansion buffer state holding cur, mask, and output fields.
+ * @return 1 on success, 0 on allocation failure.
+ */
 static int	flush_cur_field(t_exp_buf *b)
 {
 	int	ok;
@@ -28,6 +43,18 @@ static int	flush_cur_field(t_exp_buf *b)
 	return (ok);
 }
 
+/**
+ * @brief  Append @p c and its parallel wildcard flag ('1'/'0') to @p b.
+ *
+ * Passing @p c == '\0' allocates empty non-NULL buffers in cur and mask so
+ * quoted empty strings ("" or '') are preserved as an explicit empty field
+ * rather than being elided like unquoted empty expansions.
+ *
+ * @param  b     Expansion buffer state.
+ * @param  c     Character to append, or '\0' to materialize an empty field.
+ * @param  wild  True if @p c came from an unquoted context (enables '*').
+ * @return 1 on success, 0 on allocation failure.
+ */
 static int	push_char_to_cur(t_exp_buf *b, char c, bool wild)
 {
 	char	m;
@@ -43,6 +70,18 @@ static int	push_char_to_cur(t_exp_buf *b, char c, bool wild)
 	return (sb_push_char(&b->cur, c) && sb_push_char(&b->mask, m));
 }
 
+/**
+ * @brief  Feed an expanded '$' @p chunk into @p b and free @p chunk.
+ *
+ * When @p split is true (unquoted variable), space/tab/newline split fields
+ * and '*' characters are marked wild ('1'). When @p split is false (inside
+ * double quotes), an empty buffer is reserved so "$EMPTY" yields "".
+ *
+ * @param  b      Expansion buffer state.
+ * @param  chunk  Heap-allocated expansion string (always freed).
+ * @param  split  Whether IFS splitting and wildcard marking apply.
+ * @return 1 on success, 0 on allocation failure.
+ */
 static int	feed_chunk(t_exp_buf *b, char *chunk, bool split)
 {
 	size_t	k;
@@ -62,6 +101,18 @@ static int	feed_chunk(t_exp_buf *b, char *chunk, bool split)
 	return (ok);
 }
 
+/**
+ * @brief  Expand a '$' sequence during field-splitting traversal.
+ *
+ * Strips '$' in $"..."/$'...' prefixes. Enables IFS splitting and wildcard
+ * tracking only in STATE_GENERAL for valid parameter names, digits, or '?'.
+ *
+ * @param  raw  Original unexpanded word.
+ * @param  i    In/out cursor pointing at '$'.
+ * @param  b    Expansion buffer state holding current quote state.
+ * @param  ctx  Shell context for variable lookup.
+ * @return 1 on success, 0 on allocation failure.
+ */
 static int	step_expand_dollar(const char *raw, size_t *i, t_exp_buf *b,
 	t_shell *ctx)
 {
@@ -84,6 +135,18 @@ static int	step_expand_dollar(const char *raw, size_t *i, t_exp_buf *b,
 	return (feed_chunk(b, chunk, split));
 }
 
+/**
+ * @brief  Expand @p raw into IFS-split and glob-expanded fields.
+ *
+ * Maintains a parallel wildcard mask alongside the character buffer inside
+ * t_exp_buf so quoted '*' never globs while unquoted '*' (literal or from
+ * unquoted $VAR) does. Sets @p *err to 1 and returns NULL on OOM.
+ *
+ * @param  raw  Raw word to expand.
+ * @param  ctx  Shell context for variable lookup.
+ * @param  err  Set to 0 on success, 1 on allocation failure.
+ * @return NULL-terminated array of fields (may be NULL if empty), or NULL.
+ */
 char	**expand_word_fields(const char *raw, t_shell *ctx, int *err)
 {
 	t_exp_buf	b;

@@ -12,6 +12,20 @@
 
 #include "minishell.h"
 
+/**
+ * @file env_array.c
+ * @brief Serialization of environment list into execve-ready envp array.
+ */
+
+/**
+ * @brief  Count environment nodes that have an assigned non-NULL value.
+ *
+ * Variables declared via bare `export VAR` have value == NULL; they stay
+ * in the internal list for `export` display but are excluded from envp.
+ *
+ * @param  env  Head of the environment linked list.
+ * @return Number of entries to serialize into execve's envp array.
+ */
 static size_t	count_exported_vars(t_env_node *env)
 {
 	size_t	count;
@@ -26,6 +40,12 @@ static size_t	count_exported_vars(t_env_node *env)
 	return (count);
 }
 
+/**
+ * @brief  Allocate a single "KEY=VALUE" environment string.
+ * @param  key    Variable name.
+ * @param  value  Variable value (may be "", must not be NULL).
+ * @return Caller-owned "KEY=VALUE" string, or NULL on allocation failure.
+ */
 static char	*format_env_entry(const char *key, const char *value)
 {
 	char	*tmp;
@@ -39,6 +59,15 @@ static char	*format_env_entry(const char *key, const char *value)
 	return (entry);
 }
 
+/**
+ * @brief  Convert @p env into a NULL-terminated "KEY=VALUE" array for execve.
+ *
+ * Omits unassigned placeholders (value == NULL) such as initial OLDPWD or
+ * bare `export VAR`, while preserving empty strings (value == "").
+ *
+ * @param  env  Head of the environment linked list.
+ * @return Caller-owned string array (free with free_str_array), or NULL.
+ */
 char	**env_list_to_array(t_env_node *env)
 {
 	char	**arr;

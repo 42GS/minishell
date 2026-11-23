@@ -12,6 +12,12 @@
 
 #include "minishell.h"
 
+/**
+ * @file env_init.c
+ * @brief Startup environment defaults for PWD, OLDPWD, and SHLVL.
+ */
+
+/** @brief Advance @p s past leading or trailing lexer whitespace. */
 static const char	*skip_shlvl_spaces(const char *s)
 {
 	while (is_lexer_space(*s))
@@ -19,6 +25,7 @@ static const char	*skip_shlvl_spaces(const char *s)
 	return (s);
 }
 
+/** @brief Consume optional '+'/'-' sign and store polarity in @p *sign. */
 static const char	*parse_shlvl_sign(const char *s, int *sign)
 {
 	*sign = 1;
@@ -31,6 +38,17 @@ static const char	*parse_shlvl_sign(const char *s, int *sign)
 	return (s);
 }
 
+/**
+ * @brief  Strictly parse @p s as a signed integer for SHLVL.
+ *
+ * Matches Bash behavior: allows surrounding spaces and an optional sign,
+ * rejects empty strings or trailing non-digits, and caps accumulated
+ * magnitude at 100000 to prevent signed overflow before the >=1000 reset.
+ *
+ * @param  s    Raw SHLVL string (may be NULL or empty).
+ * @param  out  Receives the parsed integer value on success.
+ * @return true if @p s is a valid integer string, false otherwise.
+ */
 static bool	parse_shlvl_val(const char *s, int *out)
 {
 	long	val;
@@ -52,6 +70,14 @@ static bool	parse_shlvl_val(const char *s, int *out)
 	return (*skip_shlvl_spaces(s) == '\0');
 }
 
+/**
+ * @brief  Increment SHLVL on startup with Bash-compatible bounds checks.
+ *
+ * Unset or non-numeric SHLVL starts at 1, negative values reset to 0, and
+ * incremented levels >= 1000 warn on stderr and reset to 1.
+ *
+ * @param  ctx  Shell context owning env_list.
+ */
 static void	update_shlvl(t_shell *ctx)
 {
 	const char	*raw;
@@ -79,6 +105,15 @@ static void	update_shlvl(t_shell *ctx)
 	free(next_str);
 }
 
+/**
+ * @brief  Initialize missing PWD, OLDPWD placeholder, and SHLVL at startup.
+ *
+ * Seeds PWD via getcwd() if absent, inserts OLDPWD with value == NULL when
+ * missing (so it appears in `export` but not `env`/child envp until `cd`
+ * sets it, distinguishing NULL from ""), and increments SHLVL.
+ *
+ * @param  ctx  Shell context whose env_list has been cloned from envp.
+ */
 void	init_env_defaults(t_shell *ctx)
 {
 	char		*cwd;

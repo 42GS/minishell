@@ -12,6 +12,12 @@
 
 #include "minishell.h"
 
+/**
+ * @file executor_heredoc.c
+ * @brief Pre-execution here-document collection using unlinked temp files.
+ */
+
+/** @brief Build `/tmp/.minishell_hd_<id>` path; caller owns the string. */
 static char	*make_heredoc_tmp_path(int id)
 {
 	char	*num;
@@ -25,6 +31,15 @@ static char	*make_heredoc_tmp_path(int id)
 	return (path);
 }
 
+/**
+ * @brief  Open an anonymous temp-file FD pair (read/write) for a here-doc.
+ * @param  fds  Output array receiving read FD at fds[0] and write FD at fds[1].
+ * @return 1 on success, 0 on open/allocation/collision-limit failure.
+ *
+ * Uses O_CREAT | O_EXCL then immediately unlink()s the file so the kernel
+ * reclaims disk storage on close even after a crash. Backing with a regular
+ * file avoids the 64 KB OS pipe-buffer deadlock on large here-documents.
+ */
 static int	open_anon_heredoc_fds(int fds[2])
 {
 	char	*path;
@@ -53,6 +68,15 @@ static int	open_anon_heredoc_fds(int fds[2])
 	return (0);
 }
 
+/**
+ * @brief  Reap the here-doc reader child and restore interactive signals.
+ * @param  pid  PID of the forked here-doc reader child.
+ * @param  ctx  Shell context checked for subshell state.
+ * @return 1 if child exited 0, 0 on error or SIGINT abort.
+ *
+ * Retries waitpid() on EINTR so caught signals do not leave a zombie; on
+ * child SIGINT termination, prints a newline and records g_signal_num.
+ */
 static int	wait_heredoc_child(pid_t pid, t_shell *ctx)
 {
 	int	status;
@@ -77,6 +101,15 @@ static int	wait_heredoc_child(pid_t pid, t_shell *ctx)
 	return (WIFEXITED(status) && WEXITSTATUS(status) == 0);
 }
 
+/**
+ * @brief  Fork a child to populate one REDIR_HEREDOC descriptor.
+ * @param  redir  Redirection node whose heredoc_fd is populated on success.
+ * @param  ctx    Shell context for signals and child cleanup.
+ * @return 1 on success with redir->heredoc_fd open, 0 on failure/abort.
+ *
+ * Closes the parent's write FD immediately after fork and discards fds[0] if
+ * the child fails or is interrupted so no FDs leak.
+ */
 static int	process_heredoc_redir(t_redir *redir, t_shell *ctx)
 {
 	int		fds[2];
@@ -105,6 +138,15 @@ static int	process_heredoc_redir(t_redir *redir, t_shell *ctx)
 	return (0);
 }
 
+/**
+ * @brief  Collect all here-documents in the AST before execution begins.
+ * @param  node  AST root to traverse in left-to-right order.
+ * @param  ctx   Shell context passed to each here-doc collector.
+ * @return 1 if all here-docs succeeded, 0 on first error or SIGINT abort.
+ *
+ * Pre-collecting in AST order matches Bash prompt sequencing and ensures all
+ * heredoc_fds are ready before pipelines or subshells fork.
+ */
 int	collect_heredocs(t_ast_node *node, t_shell *ctx)
 {
 	t_redir	*redir;

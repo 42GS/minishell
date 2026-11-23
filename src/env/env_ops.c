@@ -12,6 +12,12 @@
 
 #include "minishell.h"
 
+/**
+ * @file env_ops.c
+ * @brief Environment variable insertion, update, and removal operations.
+ */
+
+/** @brief Locate the node matching @p key by exact name, or return NULL. */
 static t_env_node	*find_env_node(t_env_node *env, const char *key)
 {
 	while (env)
@@ -23,6 +29,12 @@ static t_env_node	*find_env_node(t_env_node *env, const char *key)
 	return (NULL);
 }
 
+/**
+ * @brief  Allocate a new t_env_node duplicating @p key and optional @p value.
+ * @param  key    Variable name (must not be NULL).
+ * @param  value  Value string, or NULL for unassigned `export VAR` entries.
+ * @return Newly allocated node, or NULL on allocation failure.
+ */
 static t_env_node	*new_env_pair(const char *key, const char *value)
 {
 	t_env_node	*node;
@@ -43,6 +55,7 @@ static t_env_node	*new_env_pair(const char *key, const char *value)
 	return (node);
 }
 
+/** @brief Link @p node at the tail of @p *env to preserve insertion order. */
 static void	link_env_tail(t_env_node **env, t_env_node *node)
 {
 	t_env_node	*curr;
@@ -58,6 +71,18 @@ static void	link_env_tail(t_env_node **env, t_env_node *node)
 	curr->next = node;
 }
 
+/**
+ * @brief  Insert or update @p key in the environment list @p *env.
+ *
+ * When @p key already exists and @p value is NULL (bare `export VAR`), the
+ * existing value is intentionally preserved; passing "" overwrites it with
+ * an empty string. New keys with @p value == NULL are created unassigned.
+ *
+ * @param  env    Address of the environment list head pointer.
+ * @param  key    Variable name.
+ * @param  value  New value string, "" for empty, or NULL for export-only.
+ * @return 0 on success, -1 on invalid arguments or allocation failure.
+ */
 int	env_set(t_env_node **env, const char *key, const char *value)
 {
 	t_env_node	*node;
@@ -84,6 +109,12 @@ int	env_set(t_env_node **env, const char *key, const char *value)
 	return (0);
 }
 
+/**
+ * @brief  Remove and free the node matching @p key from @p *env if present.
+ * @param  env  Address of the environment list head pointer.
+ * @param  key  Variable name to unset.
+ * @return Always 0 (removing a non-existent key is a silent no-op).
+ */
 int	env_unset(t_env_node **env, const char *key)
 {
 	t_env_node	*curr;

@@ -12,6 +12,21 @@
 
 #include "libft.h"
 
+/**
+ * @file ft_strbuf.c
+ * @brief Dynamically growing string buffer implemented without `realloc`.
+ */
+
+/**
+ * @brief  Compute next buffer capacity >= `need` via geometric doubling.
+ *
+ * Starts at 32 bytes and doubles so repeated appends remain amortized
+ * O(1) even without `realloc` (disallowed in 42 projects).
+ *
+ * @param  cur   Current capacity in bytes (0 for uninitialized buffer).
+ * @param  need  Minimum required byte capacity including NUL terminator.
+ * @return Grown capacity >= `need`.
+ */
 static size_t	calc_cap(size_t cur, size_t need)
 {
 	if (cur == 0)
@@ -21,6 +36,13 @@ static size_t	calc_cap(size_t cur, size_t need)
 	return (cur);
 }
 
+/**
+ * @brief  Free `sb->data` and reset buffer metadata to empty zero state.
+ *
+ * Resetting fields prevents dangling pointers on reuse or repeat cleanup.
+ *
+ * @param  sb  String buffer to release (must be non-NULL).
+ */
 void	sb_free(t_strbuf *sb)
 {
 	free(sb->data);
@@ -29,6 +51,17 @@ void	sb_free(t_strbuf *sb)
 	sb->cap = 0;
 }
 
+/**
+ * @brief  Ensure `sb` holds `need` extra bytes plus a NUL terminator.
+ *
+ * Because `realloc` is disallowed, growth allocates a new buffer via
+ * `malloc`, copies `sb->len` bytes, and frees the old buffer. On OOM,
+ * `sb` itself is freed via `sb_free` so callers need no cleanup on `0`.
+ *
+ * @param  sb    Target zero-initialized or active string buffer.
+ * @param  need  Additional payload bytes required beyond `sb->len`.
+ * @return `1` on success, `0` on `malloc` failure (`sb` freed).
+ */
 int	sb_reserve(t_strbuf *sb, size_t need)
 {
 	size_t	new_cap;
@@ -57,6 +90,13 @@ int	sb_reserve(t_strbuf *sb, size_t need)
 	return (1);
 }
 
+/**
+ * @brief  Append single character `c` while keeping `sb->data` NUL-ended.
+ *
+ * @param  sb  Target string buffer (freed automatically on OOM).
+ * @param  c   Character byte to append.
+ * @return `1` on success, `0` on allocation failure (`sb` freed).
+ */
 int	sb_push_char(t_strbuf *sb, char c)
 {
 	if (!sb_reserve(sb, 1))
@@ -67,6 +107,16 @@ int	sb_push_char(t_strbuf *sb, char c)
 	return (1);
 }
 
+/**
+ * @brief  Append C-string `s` to `sb`, treating `NULL` as a safe no-op.
+ *
+ * Keeps `sb->data` NUL-terminated; caller retains ownership of `sb->data`
+ * on success and must call `sb_free` (or `free`) when done.
+ *
+ * @param  sb  Target string buffer (freed automatically on OOM).
+ * @param  s   String to append, or `NULL` (no-op returning `1`).
+ * @return `1` on success, `0` on allocation failure (`sb` freed).
+ */
 int	sb_push_str(t_strbuf *sb, const char *s)
 {
 	size_t	add;

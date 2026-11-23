@@ -12,6 +12,19 @@
 
 #include "minishell.h"
 
+/**
+ * @file executor_pipe_child.c
+ * @brief Pipeline child spawning, dup2 wiring, and Strict Pipe-Close cleanup.
+ */
+
+/**
+ * @brief  Close every open descriptor in a flattened pipe FD array.
+ * @param  pipes       Array of `pipe_count * 2` raw pipe descriptors.
+ * @param  pipe_count  Number of pipes (`stage_count - 1`).
+ *
+ * Enforces the Strict Pipe-Close protocol in both parent and child stages so
+ * no dangling write ends block downstream readers from seeing EOF.
+ */
 void	close_all_pipes(int *pipes, int pipe_count)
 {
 	int	i;
@@ -27,6 +40,12 @@ void	close_all_pipes(int *pipes, int pipe_count)
 	}
 }
 
+/**
+ * @brief  Redirect STDIN/STDOUT of pipeline stage idx to adjacent pipe ends.
+ * @param  pctx  Pipeline context holding pipe FDs and stage count.
+ * @param  idx   Zero-based index of the current pipeline stage.
+ * @return 0 on success, 1 if dup2() fails.
+ */
 static int	setup_pipe_fds(t_pipe_ctx *pctx, int idx)
 {
 	if (idx > 0 && dup2(pctx->pipes[(idx - 1) * 2], STDIN_FILENO) == -1)
@@ -43,6 +62,16 @@ static int	setup_pipe_fds(t_pipe_ctx *pctx, int idx)
 	return (0);
 }
 
+/**
+ * @brief  Configure pipe FDs and execute a single pipeline stage in a child.
+ * @param  pctx  Pipeline context (heap arrays freed before exec/eval).
+ * @param  idx   Zero-based stage index in pctx->cmds.
+ * @param  ctx   Shell context marked in_subshell = true for isolation.
+ *
+ * Completes Strict Pipe-Close immediately after dup2(), resets signals to
+ * SIG_STATE_CHILD, and for subshell stages closes sibling AST heredocs via
+ * close_ast_heredocs() before recursing into cmd->left. Never returns.
+ */
 static void	run_pipe_node(t_pipe_ctx *pctx, int idx, t_shell *ctx)
 {
 	t_ast_node	*cmd;
@@ -68,6 +97,15 @@ static void	run_pipe_node(t_pipe_ctx *pctx, int idx, t_shell *ctx)
 	exit_child_clean(ctx, NULL, NULL, status);
 }
 
+/**
+ * @brief  Fork child processes for each flattened pipeline stage.
+ * @param  pctx  Pipeline context receiving child PIDs in pctx->pids.
+ * @param  ctx   Shell context passed to each forked stage.
+ * @return Number of children successfully spawned (may be < pctx->count).
+ *
+ * Stops spawning on the first fork() error while returning the partial count
+ * so the caller still closes all pipes and reaps already-forked children.
+ */
 int	spawn_pipe_children(t_pipe_ctx *pctx, t_shell *ctx)
 {
 	int	i;

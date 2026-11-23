@@ -12,6 +12,19 @@
 
 #include "minishell.h"
 
+/**
+ * @file builtin_echo.c
+ * @brief Implementation of the echo builtin with -n suppression support.
+ */
+
+/**
+ * @brief  Checks whether arg is a valid echo -n flag (e.g., -n, -nnn).
+ *
+ * Accepts "-" followed by one or more 'n' characters only; any other
+ * character disqualifies the argument so it is printed verbatim.
+ * @param  arg  Argument string to inspect.
+ * @return true if arg consists solely of '-' followed by 'n's, else false.
+ */
 static bool	is_echo_n_flag(const char *arg)
 {
 	size_t	i;
@@ -28,6 +41,11 @@ static bool	is_echo_n_flag(const char *arg)
 	return (true);
 }
 
+/**
+ * @brief  Writes a non-empty string to stdout with write() error checking.
+ * @param  s  NUL-terminated string to write.
+ * @return 0 on success or empty string, 1 if write() fails.
+ */
 static int	write_str_safe(const char *s)
 {
 	size_t	len;
@@ -40,6 +58,15 @@ static int	write_str_safe(const char *s)
 	return (0);
 }
 
+/**
+ * @brief  Executes the echo builtin command.
+ *
+ * Consumes all leading repeated -n flags (such as -n -nnn) to suppress the
+ * trailing newline, then prints remaining arguments separated by spaces and
+ * checks every write() call for I/O errors.
+ * @param  argv  Argument vector starting with "echo".
+ * @return 0 on success, 1 if any write() to stdout fails.
+ */
 int	ft_echo(char **argv)
 {
 	int		i;
