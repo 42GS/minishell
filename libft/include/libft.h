@@ -16,6 +16,18 @@
 # include <stdlib.h>
 # include <unistd.h>
 
+typedef struct s_strbuf
+{
+	char	*data;
+	size_t	len;
+	size_t	cap;
+}	t_strbuf;
+
+void	sb_free(t_strbuf *sb);
+int		sb_reserve(t_strbuf *sb, size_t need);
+int		sb_push_char(t_strbuf *sb, char c);
+int		sb_push_str(t_strbuf *sb, const char *s);
+
 size_t	ft_strlen(const char *s);
 char	*ft_strdup(const char *s1);
 char	*ft_substr(char const *s, unsigned int start, size_t len);

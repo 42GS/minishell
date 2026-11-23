@@ -60,45 +60,46 @@ char	*expand_word(const char *raw, t_shell *ctx)
 {
 	t_quote_state	st;
 	size_t			i;
-	char			*res;
+	t_strbuf		sb;
 
-	res = ft_strdup("");
+	ft_bzero(&sb, sizeof(t_strbuf));
+	if (!sb_reserve(&sb, 0))
+		return (NULL);
 	st = STATE_GENERAL;
 	i = 0;
-	while (res && raw && raw[i])
+	while (raw && raw[i])
 	{
-		if (step_quote(raw[i], &st))
-			i++;
-		else if (st == STATE_GENERAL && raw[i] == '$'
-			&& (raw[i + 1] == '"' || raw[i + 1] == '\''))
+		if (step_quote(raw[i], &st) || is_dollar_quote(raw, i, st))
 			i++;
 		else if (raw[i] == '$' && st != STATE_SQUOTE)
 		{
-			if (!append_str_free(&res, expand_dollar(raw, &i, ctx)))
+			if (!sb_push_str_free(&sb, expand_dollar(raw, &i, ctx)))
 				return (NULL);
 		}
-		else if (!append_char_str(&res, raw[i++]))
+		else if (!sb_push_char(&sb, raw[i++]))
 			return (NULL);
 	}
-	return (res);
+	return (sb.data);
 }
 
 char	*expand_heredoc_line(const char *raw, t_shell *ctx)
 {
-	size_t	i;
-	char	*res;
+	size_t		i;
+	t_strbuf	sb;
 
-	res = ft_strdup("");
+	ft_bzero(&sb, sizeof(t_strbuf));
+	if (!sb_reserve(&sb, 0))
+		return (NULL);
 	i = 0;
-	while (res && raw && raw[i])
+	while (raw && raw[i])
 	{
 		if (raw[i] == '$')
 		{
-			if (!append_str_free(&res, expand_dollar(raw, &i, ctx)))
+			if (!sb_push_str_free(&sb, expand_dollar(raw, &i, ctx)))
 				return (NULL);
 		}
-		else if (!append_char_str(&res, raw[i++]))
+		else if (!sb_push_char(&sb, raw[i++]))
 			return (NULL);
 	}
-	return (res);
+	return (sb.data);
 }

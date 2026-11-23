@@ -33,7 +33,7 @@ t_ast_node	*parse_tokens(t_token *tokens, int *err_code)
 	return (root);
 }
 
-static int	handle_cmd_redir(t_token **curr, t_ast_node *node, int *err)
+int	parse_single_redir(t_token **curr, t_redir **redirs, int *err)
 {
 	t_token_type	op_type;
 	t_redir			*redir;
@@ -52,7 +52,7 @@ static int	handle_cmd_redir(t_token **curr, t_ast_node *node, int *err)
 			*err = 1;
 		return (0);
 	}
-	append_redir(&node->redirs, redir);
+	append_redir(redirs, redir);
 	*curr = (*curr)->next;
 	return (1);
 }
@@ -87,7 +87,7 @@ t_ast_node	*parse_simple_command(t_token **curr, int *err)
 		if ((*curr)->type == TOK_WORD)
 			ok = handle_cmd_word(curr, node, err);
 		else
-			ok = handle_cmd_redir(curr, node, err);
+			ok = parse_single_redir(curr, &node->redirs, err);
 		if (!ok)
 		{
 			free_ast(&node);

@@ -56,6 +56,7 @@ void			free_ast(t_ast_node **node);
 
 t_ast_node		*parse_and_or(t_token **curr, int *err);
 t_ast_node		*parse_simple_command(t_token **curr, int *err);
+int				parse_single_redir(t_token **curr, t_redir **redirs, int *err);
 t_ast_node		*create_ast_node(t_node_type type, t_ast_node *left,
 					t_ast_node *right);
 t_ast_node		*join_ast_nodes(t_node_type type, t_ast_node *left,

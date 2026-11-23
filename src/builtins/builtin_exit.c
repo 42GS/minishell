@@ -17,27 +17,23 @@ static bool	parse_exit_digits(const char *s, int sign, int *code)
 {
 	unsigned long long	acc;
 	unsigned long long	lim;
+	unsigned long long	digit;
 
-	lim = (unsigned long long)LLONG_MAX;
-	if (sign == -1)
-		lim += 1ULL;
+	lim = (unsigned long long)LLONG_MAX + (unsigned long long)(sign == -1);
 	acc = 0;
-	while (*s >= '0' && *s <= '9')
+	while (ft_isdigit((unsigned char)*s))
 	{
-		if (acc > lim / 10ULL || (acc == lim / 10ULL
-				&& (unsigned long long)(*s - '0') > lim % 10ULL))
+		digit = (unsigned long long)(*s - '0');
+		if (acc > (lim - digit) / 10ULL)
 			return (false);
-		acc = acc * 10ULL + (unsigned long long)(*s - '0');
+		acc = acc * 10ULL + digit;
 		s++;
 	}
-	while (*s == ' ' || (*s >= '\t' && *s <= '\r'))
+	while (is_lexer_space(*s))
 		s++;
 	if (*s != '\0')
 		return (false);
-	if (sign == -1)
-		*code = (int)(unsigned char)(-(acc % 256ULL));
-	else
-		*code = (int)(unsigned char)(acc % 256ULL);
+	*code = (int)(unsigned char)((long long)(acc % 256ULL) * sign);
 	return (true);
 }
 
@@ -47,7 +43,7 @@ bool	parse_exit_code(const char *str, int *code)
 
 	if (!str || !code)
 		return (false);
-	while (*str == ' ' || (*str >= '\t' && *str <= '\r'))
+	while (is_lexer_space(*str))
 		str++;
 	sign = 1;
 	if (*str == '+' || *str == '-')

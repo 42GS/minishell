@@ -12,66 +12,43 @@
 
 #include "minishell.h"
 
-int	step_quote(char c, t_quote_state *st)
+bool	is_dollar_quote(const char *s, size_t i, t_quote_state st)
 {
-	if (*st == STATE_GENERAL && c == '\'')
-		*st = STATE_SQUOTE;
-	else if (*st == STATE_SQUOTE && c == '\'')
-		*st = STATE_GENERAL;
-	else if (*st == STATE_GENERAL && c == '"')
-		*st = STATE_DQUOTE;
-	else if (*st == STATE_DQUOTE && c == '"')
-		*st = STATE_GENERAL;
-	else
-		return (0);
-	return (1);
+	return (st == STATE_GENERAL && s[i] == '$'
+		&& (s[i + 1] == '"' || s[i + 1] == '\''));
 }
 
-int	append_char_str(char **res, char c)
+int	sb_push_str_free(t_strbuf *sb, char *chunk)
 {
-	char	buf[2];
-	char	*joined;
-
-	buf[0] = c;
-	buf[1] = '\0';
-	joined = ft_strjoin(*res, buf);
-	free(*res);
-	*res = joined;
-	return (joined != NULL);
-}
-
-int	append_str_free(char **res, char *chunk)
-{
-	char	*joined;
+	int	ok;
 
 	if (!chunk)
 	{
-		free(*res);
-		*res = NULL;
+		sb_free(sb);
 		return (0);
 	}
-	joined = ft_strjoin(*res, chunk);
-	free(*res);
+	ok = sb_push_str(sb, chunk);
 	free(chunk);
-	*res = joined;
-	return (joined != NULL);
+	return (ok);
 }
 
 char	*strip_quotes_only(const char *raw)
 {
 	t_quote_state	st;
 	size_t			i;
-	char			*res;
+	t_strbuf		sb;
 
-	res = ft_strdup("");
+	ft_bzero(&sb, sizeof(t_strbuf));
+	if (!sb_reserve(&sb, 0))
+		return (NULL);
 	st = STATE_GENERAL;
 	i = 0;
-	while (res && raw && raw[i])
+	while (raw && raw[i])
 	{
 		if (step_quote(raw[i], &st))
 			i++;
-		else if (!append_char_str(&res, raw[i++]))
+		else if (!sb_push_char(&sb, raw[i++]))
 			return (NULL);
 	}
-	return (res);
+	return (sb.data);
 }

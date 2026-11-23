@@ -34,7 +34,7 @@ typedef struct s_pipe_ctx
 typedef struct s_exp_buf
 {
 	char			**fields;
-	char			*cur;
+	t_strbuf		cur;
 	t_quote_state	st;
 }	t_exp_buf;
 
@@ -57,7 +57,6 @@ char	*extract_path_dir(const char *p, size_t *pos, bool *done);
 char	*join_path_cmd(char *dir, const char *cmd);
 int		check_candidate(char *cand, char **denied);
 
-int		step_quote(char c, t_quote_state *st);
 char	*expand_dollar(const char *s, size_t *i, t_shell *ctx);
 char	*expand_word(const char *raw, t_shell *ctx);
 char	*expand_heredoc_line(const char *raw, t_shell *ctx);
@@ -65,7 +64,7 @@ char	*strip_quotes_only(const char *raw);
 char	**expand_word_fields(const char *raw, t_shell *ctx, int *err);
 char	*expand_redir_target(const char *raw, t_shell *ctx);
 int		expand_cmd_args(t_ast_node *cmd, t_shell *ctx);
-int		append_char_str(char **res, char c);
-int		append_str_free(char **res, char *chunk);
+bool	is_dollar_quote(const char *s, size_t i, t_quote_state st);
+int		sb_push_str_free(t_strbuf *sb, char *chunk);
 
 #endif

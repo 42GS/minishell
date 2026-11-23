@@ -16,7 +16,8 @@ SRCS		= $(SRC_DIR)/ft_strlen.c \
 			  $(SRC_DIR)/ft_put_fd.c \
 			  $(SRC_DIR)/ft_ischar.c \
 			  $(SRC_DIR)/ft_itoa.c \
-			  $(SRC_DIR)/ft_split.c
+			  $(SRC_DIR)/ft_split.c \
+			  $(SRC_DIR)/ft_strbuf.c
 
 OBJS		= $(SRCS:$(SRC_DIR)/%.c=$(OBJ_DIR)/%.o)
 

@@ -155,6 +155,27 @@ static void	test_word_splitting_and_ambig(t_shell *ctx)
 	free(out);
 }
 
+static void	test_expander_long_strbuf(t_shell *ctx)
+{
+	char	raw[4200];
+	char	*stripped;
+	char	*expanded;
+	size_t	i;
+
+	raw[0] = '"';
+	i = 1;
+	while (i < 4097)
+		raw[i++] = 'x';
+	raw[i++] = '"';
+	raw[i] = '\0';
+	stripped = strip_quotes_only(raw);
+	assert(stripped != NULL && strlen(stripped) == 4096);
+	free(stripped);
+	expanded = expand_word(raw, ctx);
+	assert(expanded != NULL && strlen(expanded) == 4096);
+	free(expanded);
+}
+
 int	main(void)
 {
 	t_shell	ctx;
@@ -166,6 +187,7 @@ int	main(void)
 	ctx.env_list = init_env_list(envp);
 	printf("[UNIT] Running Expander, Redirection & Heredoc unit tests...\n");
 	test_expander_quotes_and_vars(&ctx);
+	test_expander_long_strbuf(&ctx);
 	test_file_redirections(&ctx);
 	test_heredoc_collection(&ctx);
 	test_heredoc_excl_no_clobber(&ctx);

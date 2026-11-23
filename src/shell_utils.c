@@ -59,38 +59,13 @@ void	exit_child_clean(t_shell *ctx, char *path, char **envp, int code)
 	exit(code);
 }
 
-static char	*append_char_line(char *line, char c, size_t len)
-{
-	char	*new_line;
-	size_t	i;
-
-	new_line = (char *)malloc(sizeof(char) * (len + 2));
-	if (!new_line)
-	{
-		free(line);
-		return (NULL);
-	}
-	i = 0;
-	while (i < len)
-	{
-		new_line[i] = line[i];
-		i++;
-	}
-	new_line[len] = c;
-	new_line[len + 1] = '\0';
-	free(line);
-	return (new_line);
-}
-
 char	*read_stdin_line(void)
 {
-	char	*line;
-	char	c;
-	ssize_t	rd;
-	size_t	len;
+	t_strbuf	sb;
+	char		c;
+	ssize_t		rd;
 
-	line = NULL;
-	len = 0;
+	ft_bzero(&sb, sizeof(t_strbuf));
 	while (1)
 	{
 		rd = read(STDIN_FILENO, &c, 1);
@@ -98,13 +73,12 @@ char	*read_stdin_line(void)
 			break ;
 		if (c == '\n')
 		{
-			if (!line)
-				return (ft_strdup(""));
-			return (line);
+			if (!sb_reserve(&sb, 0))
+				return (NULL);
+			return (sb.data);
 		}
-		line = append_char_line(line, c, len++);
-		if (!line)
+		if (!sb_push_char(&sb, c))
 			return (NULL);
 	}
-	return (line);
+	return (sb.data);
 }
