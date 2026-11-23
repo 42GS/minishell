@@ -60,8 +60,9 @@ CORE_SRCS="src/shell_utils.c \
     src/parser/parser.c src/parser/parser_cmd.c \
     src/parser/parser_ast.c src/parser/parser_utils.c \
     src/executor/executor.c src/executor/executor_pipe.c \
-    src/executor/executor_pipe_child.c src/executor/executor_path.c \
-    src/executor/executor_redir.c src/executor/executor_heredoc.c \
+    src/executor/executor_pipe_child.c src/executor/executor_wait.c \
+    src/executor/executor_path.c src/executor/executor_redir.c \
+    src/executor/executor_heredoc.c src/executor/executor_heredoc_child.c \
     src/expander/expander.c src/expander/expander_utils.c \
     src/env/env_core.c src/env/env_ops.c \
     src/env/env_init.c src/env/env_array.c \
@@ -70,7 +71,7 @@ CORE_SRCS="src/shell_utils.c \
     src/builtins/builtin_export.c src/builtins/builtin_export_print.c \
     src/builtins/builtin_unset.c src/builtins/builtin_env.c \
     src/builtins/builtin_exit.c \
-    src/signals/signals_stub.c"
+    src/signals/signals.c src/signals/signals_term.c"
 
 cc -Wall -Wextra -Werror -I include -I libft/include \
     tests/unit/test_executor.c $CORE_SRCS libft/libft.a $RL_FLAGS \
@@ -89,3 +90,9 @@ cc -Wall -Wextra -Werror -I include -I libft/include \
     -o /tmp/minishell_unit_builtins
 run_with_leak_check /tmp/minishell_unit_builtins
 rm -f /tmp/minishell_unit_builtins
+
+cc -Wall -Wextra -Werror -I include -I libft/include \
+    tests/unit/test_signals.c $CORE_SRCS libft/libft.a $RL_FLAGS \
+    -o /tmp/minishell_unit_signals
+run_with_leak_check /tmp/minishell_unit_signals
+rm -f /tmp/minishell_unit_signals

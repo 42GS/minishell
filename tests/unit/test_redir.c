@@ -54,33 +54,32 @@ static void	test_file_redirections(t_shell *ctx)
 
 static void	test_heredoc_collection(t_shell *ctx)
 {
-	int			pfd[2];
-	int			saved_in;
-	t_token		*toks;
-	t_ast_node	*ast;
-	char		buf[64];
-	ssize_t		n;
-	int			err;
+	int		pfd[2];
+	int		saved_in;
+	t_token	*toks;
+	char	buf[64];
+	ssize_t	n;
+	int		err;
 
 	toks = tokenize_input("cat << EOF", &err);
-	ast = parse_tokens(toks, &err);
+	ctx->current_ast = parse_tokens(toks, &err);
 	free_tokens(&toks);
-	assert(ast != NULL);
+	assert(ctx->current_ast != NULL);
 	assert(pipe(pfd) == 0);
 	ft_putstr_fd("val=$MS_UNIT_V\nEOF\n", pfd[1]);
 	close(pfd[1]);
 	saved_in = dup(STDIN_FILENO);
 	dup2(pfd[0], STDIN_FILENO);
 	close(pfd[0]);
-	assert(collect_heredocs(ast, ctx) == 1);
+	assert(collect_heredocs(ctx->current_ast, ctx) == 1);
 	dup2(saved_in, STDIN_FILENO);
 	close(saved_in);
-	assert(ast->redirs->heredoc_fd >= 0);
-	n = read(ast->redirs->heredoc_fd, buf, sizeof(buf) - 1);
+	assert(ctx->current_ast->redirs->heredoc_fd >= 0);
+	n = read(ctx->current_ast->redirs->heredoc_fd, buf, sizeof(buf) - 1);
 	assert(n > 0);
 	buf[n] = '\0';
 	assert(strcmp(buf, "val=hello\n") == 0);
-	free_ast(&ast);
+	free_ast(&ctx->current_ast);
 }
 
 int	main(void)

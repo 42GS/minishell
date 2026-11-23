@@ -56,23 +56,27 @@ static int	execute_single_builtin(t_ast_node *cmd, t_shell *ctx)
 static int	execute_simple_cmd(t_ast_node *cmd, t_shell *ctx)
 {
 	pid_t	pid;
-	int		status;
 
 	if (!expand_cmd_args(cmd, ctx))
 		return (1);
 	if (cmd->argv && cmd->argv[0] && is_builtin(cmd->argv[0]))
 		return (execute_single_builtin(cmd, ctx));
+	if (!ctx->in_subshell)
+		set_signal_state(SIG_STATE_EXECUTION);
 	pid = fork();
 	if (pid == -1)
 	{
+		if (!ctx->in_subshell)
+			set_signal_state(SIG_STATE_INTERACTIVE);
 		perror("minishell: fork");
 		return (1);
 	}
 	if (pid == 0)
+	{
+		set_signal_state(SIG_STATE_CHILD);
 		exec_cmd_in_child(cmd, ctx);
-	if (waitpid(pid, &status, 0) == -1)
-		return (1);
-	return (normalize_wait_status(status));
+	}
+	return (wait_child_status(pid, ctx));
 }
 
 static int	execute_subshell(t_ast_node *node, t_shell *ctx)
@@ -80,27 +84,26 @@ static int	execute_subshell(t_ast_node *node, t_shell *ctx)
 	pid_t	pid;
 	int		status;
 
+	if (!ctx->in_subshell)
+		set_signal_state(SIG_STATE_EXECUTION);
 	pid = fork();
 	if (pid == -1)
 	{
+		if (!ctx->in_subshell)
+			set_signal_state(SIG_STATE_INTERACTIVE);
 		perror("minishell: fork");
 		return (1);
 	}
 	if (pid == 0)
 	{
+		set_signal_state(SIG_STATE_CHILD);
 		ctx->in_subshell = true;
 		if (apply_redirections(node->redirs, ctx) != 0)
-		{
-			free_child_resources(ctx);
-			exit(1);
-		}
+			exit_child_clean(ctx, NULL, NULL, 1);
 		status = execute_ast(node->left, ctx);
-		free_child_resources(ctx);
-		exit(status);
+		exit_child_clean(ctx, NULL, NULL, status);
 	}
-	if (waitpid(pid, &status, 0) == -1)
-		return (1);
-	return (normalize_wait_status(status));
+	return (wait_child_status(pid, ctx));
 }
 
 int	execute_ast(t_ast_node *node, t_shell *ctx)
