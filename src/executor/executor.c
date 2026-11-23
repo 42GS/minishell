@@ -37,6 +37,8 @@ static int	execute_single_builtin(t_ast_node *cmd, t_shell *ctx)
 {
 	int	status;
 
+	if (!cmd->redirs)
+		return (dispatch_builtin(cmd->argv, ctx, ctx->in_subshell));
 	ctx->saved_in = dup(STDIN_FILENO);
 	ctx->saved_out = dup(STDOUT_FILENO);
 	ctx->has_backup_fds = true;

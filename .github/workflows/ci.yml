@@ -75,27 +75,14 @@ jobs:
         run: |
           python3 tests/e2e/run_e2e.py --ci
 
+      - name: Run Full 42evalhub E2E Suites (01-05)
+        run: |
+          python3 tests/e2e/run_e2e.py --all
+
       - name: Run Interactive PTY Signal Tests
         run: |
           python3 tests/e2e/test_signals_pty.py
 
       - name: Run Valgrind Memory & FD Leak Check
         run: |
-          printf "/bin/echo valgrind_ok | cat | cat\n" | valgrind \
-            --leak-check=full \
-            --show-leak-kinds=all \
-            --errors-for-leak-kinds=all \
-            --track-fds=yes \
-            --suppressions=tests/readline.supp \
-            --error-exitcode=42 \
-            ./minishell
-          rc=0
-          printf "nonexistent_vg_cmd\n" | valgrind \
-            --leak-check=full \
-            --show-leak-kinds=all \
-            --errors-for-leak-kinds=all \
-            --track-fds=yes \
-            --suppressions=tests/readline.supp \
-            --error-exitcode=42 \
-            ./minishell || rc=$?
-          test "$rc" -eq 127
+          bash tests/e2e/run_valgrind_qa.sh
