@@ -12,6 +12,15 @@
 
 #include "minishell.h"
 
+/**
+ * @file shell_utils.c
+ * @brief Resource teardown for parent/child shells and raw stdin line reader.
+ */
+
+/**
+ * @brief  Free a NULL-terminated array of heap strings and the array itself.
+ * @param  arr  String vector to release (no-op if NULL).
+ */
 void	free_str_array(char **arr)
 {
 	size_t	i;
@@ -27,6 +36,14 @@ void	free_str_array(char **arr)
 	free(arr);
 }
 
+/**
+ * @brief  Release all heap buffers and backup FDs owned by @p ctx.
+ * @param  ctx  Shell context (safe if NULL).
+ *
+ * Closes `saved_in` / `saved_out` when `has_backup_fds` is set, and frees
+ * `line`, `current_ast`, `current_tokens`, `env_list`, and `cwd` so child
+ * processes and parent shutdown leave zero reachable leaks or open FDs.
+ */
 void	free_child_resources(t_shell *ctx)
 {
 	if (!ctx)
@@ -51,6 +68,13 @@ void	free_child_resources(t_shell *ctx)
 	}
 }
 
+/**
+ * @brief  Free execve temporaries and shell resources, then exit in a child.
+ * @param  ctx   Shell context freed via `free_child_resources`.
+ * @param  path  Resolved executable path to free (may be NULL).
+ * @param  envp  Serialized environment vector to free (may be NULL).
+ * @param  code  Exit status passed to `exit(3)`.
+ */
 void	exit_child_clean(t_shell *ctx, char *path, char **envp, int code)
 {
 	free(path);
@@ -59,6 +83,13 @@ void	exit_child_clean(t_shell *ctx, char *path, char **envp, int code)
 	exit(code);
 }
 
+/**
+ * @brief  Read one newline-terminated line from `STDIN_FILENO` byte-by-byte.
+ * @return Heap-allocated line without trailing newline, or NULL on EOF/OOM.
+ *
+ * Used in non-interactive mode instead of `readline` so piped or scripted
+ * inputs avoid prompt output and terminal line-editing overhead.
+ */
 char	*read_stdin_line(void)
 {
 	t_strbuf	sb;

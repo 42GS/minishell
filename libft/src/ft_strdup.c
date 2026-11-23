@@ -12,6 +12,21 @@
 
 #include "libft.h"
 
+/**
+ * @file ft_strdup.c
+ * @brief NULL-safe heap string duplication.
+ */
+
+/**
+ * @brief  Duplicate `s1` into newly allocated heap storage.
+ *
+ * Returns `NULL` safely when `s1` is `NULL` so callers handling optional
+ * strings do not need pre-checks.
+ *
+ * @param  s1  Source NUL-terminated string, or `NULL`.
+ * @return Caller-owned duplicate (`free` required), or `NULL` on `NULL`
+ *         input or `malloc` failure.
+ */
 char	*ft_strdup(const char *s1)
 {
 	char	*dup;

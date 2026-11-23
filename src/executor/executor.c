@@ -12,6 +12,18 @@
 
 #include "minishell.h"
 
+/**
+ * @file executor.c
+ * @brief Top-level AST traversal, simple commands, and subshell execution.
+ */
+
+/**
+ * @brief  Restore STDIN/STDOUT from backup FDs after a parent-run builtin.
+ * @param  ctx  Shell context holding saved_in, saved_out, has_backup_fds.
+ *
+ * Closes saved descriptors and resets backup state so subsequent commands
+ * never inherit stale redirections or leaked FDs.
+ */
 static void	restore_std_fds(t_shell *ctx)
 {
 	if (!ctx->has_backup_fds)
@@ -33,6 +45,15 @@ static void	restore_std_fds(t_shell *ctx)
 	ctx->has_backup_fds = false;
 }
 
+/**
+ * @brief  Execute a builtin directly in the current shell process.
+ * @param  cmd  Command AST node whose argv[0] is a known builtin.
+ * @param  ctx  Shell context updated by builtin side effects.
+ * @return Exit status of the builtin, or 1 if dup/redirection fails.
+ *
+ * Bypasses dup/dup2 backup when !cmd->redirs to avoid unnecessary FD churn;
+ * when redirections exist, backups guarantee parent stdio is always restored.
+ */
 static int	execute_single_builtin(t_ast_node *cmd, t_shell *ctx)
 {
 	int	status;
@@ -57,6 +78,16 @@ static int	execute_single_builtin(t_ast_node *cmd, t_shell *ctx)
 	return (status);
 }
 
+/**
+ * @brief  Expand and run a simple command node, in-process or via fork.
+ * @param  cmd  Simple command AST node.
+ * @param  ctx  Shell execution context.
+ * @return Normalized command exit status, or 1 on expansion/fork failure.
+ *
+ * Expands arguments first so builtins run in-process without forking.
+ * External commands set SIG_STATE_EXECUTION before fork() so the parent
+ * ignores SIGINT/SIGQUIT until wait_child_status() finishes reaping.
+ */
 static int	execute_simple_cmd(t_ast_node *cmd, t_shell *ctx)
 {
 	pid_t	pid;
@@ -83,6 +114,15 @@ static int	execute_simple_cmd(t_ast_node *cmd, t_shell *ctx)
 	return (wait_child_status(pid, ctx));
 }
 
+/**
+ * @brief  Fork and execute a parenthesized subshell AST node.
+ * @param  node  NODE_SUBSHELL AST node containing redirs and left subtree.
+ * @param  ctx   Shell context; child sets in_subshell to isolate state.
+ * @return Exit status of the subshell process, or 1 if fork fails.
+ *
+ * Closes sibling AST heredoc FDs via close_ast_heredocs() while keeping
+ * node->left intact, preventing FD leaks into nested commands.
+ */
 static int	execute_subshell(t_ast_node *node, t_shell *ctx)
 {
 	pid_t	pid;
@@ -111,6 +151,16 @@ static int	execute_subshell(t_ast_node *node, t_shell *ctx)
 	return (wait_child_status(pid, ctx));
 }
 
+/**
+ * @brief  Recursively evaluate an AST node and record last_exit_status.
+ * @param  node  Root of the AST subtree to execute (may be NULL).
+ * @param  ctx   Shell context holding exit status and interrupt flags.
+ * @return Exit status of the evaluated subtree (0 when node is NULL).
+ *
+ * Short-circuits && / || chains on !ctx->interrupted so a SIGINT-killed
+ * child aborts the list, whereas `(exit 130) || true` leaves interrupted
+ * false and still evaluates the right-hand branch.
+ */
 int	execute_ast(t_ast_node *node, t_shell *ctx)
 {
 	int	status;

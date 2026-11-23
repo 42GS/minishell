@@ -12,6 +12,12 @@
 
 #include "minishell.h"
 
+/**
+ * @file executor_heredoc_child.c
+ * @brief Here-doc child reader loop and sibling AST FD cleanup utilities.
+ */
+
+/** @brief Print Bash warning when here-doc reaches EOF before delimiter. */
 static void	print_heredoc_eof_warn(const char *delim)
 {
 	ft_putstr_fd("minishell: warning: here-document delimited by ",
@@ -21,6 +27,14 @@ static void	print_heredoc_eof_warn(const char *delim)
 	ft_putendl_fd("')", STDERR_FILENO);
 }
 
+/**
+ * @brief  Write one here-doc line to fd, expanding variables unless quoted.
+ * @param  fd      Writable backing-file descriptor.
+ * @param  line    Input line read from stdin/readline.
+ * @param  quoted  True when delimiter was quoted (suppresses expansion).
+ * @param  ctx     Shell context used for variable expansion.
+ * @return 1 on success, 0 on expansion allocation failure.
+ */
 static int	write_heredoc_line(int fd, char *line, bool quoted, t_shell *ctx)
 {
 	char	*out;
@@ -39,6 +53,14 @@ static int	write_heredoc_line(int fd, char *line, bool quoted, t_shell *ctx)
 	return (1);
 }
 
+/**
+ * @brief  Read here-doc lines until delimiter match or EOF.
+ * @param  fd      Writable backing-file descriptor.
+ * @param  delim   Quote-stripped delimiter string.
+ * @param  quoted  True when delimiter was quoted.
+ * @param  ctx     Shell context selecting interactive vs raw stdin reads.
+ * @return 1 on normal completion, 0 if line expansion fails.
+ */
 static int	read_heredoc_loop(int fd, const char *delim, bool quoted,
 	t_shell *ctx)
 {
@@ -66,6 +88,15 @@ static int	read_heredoc_loop(int fd, const char *delim, bool quoted,
 	return (1);
 }
 
+/**
+ * @brief  Entry point for the forked here-doc input collector child.
+ * @param  fds    Backing-file FDs; closes unused read end fds[0] upfront.
+ * @param  redir  Here-doc redirection specifying target delimiter and quoting.
+ * @param  ctx    Shell context freed via free_child_resources() before exit.
+ *
+ * Isolates readline and SIG_STATE_HEREDOC handling in a child process and
+ * always terminates via exit(0) or exit(1) without returning.
+ */
 void	run_heredoc_child(int fds[2], t_redir *redir, t_shell *ctx)
 {
 	char	*delim;
@@ -85,6 +116,14 @@ void	run_heredoc_child(int fds[2], t_redir *redir, t_shell *ctx)
 	exit(1);
 }
 
+/**
+ * @brief  Close all open heredoc_fd descriptors outside the skip subtree.
+ * @param  node  Current AST node being walked.
+ * @param  skip  Subtree whose heredoc FDs must remain open (or NULL).
+ *
+ * Prevents child processes and subshells from leaking sibling AST branches'
+ * heredoc read descriptors across forks or into execve().
+ */
 void	close_ast_heredocs(t_ast_node *node, t_ast_node *skip)
 {
 	t_redir	*redir;

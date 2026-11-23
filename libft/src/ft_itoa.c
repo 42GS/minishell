@@ -12,6 +12,19 @@
 
 #include "libft.h"
 
+/**
+ * @file ft_itoa.c
+ * @brief Signed integer to decimal string conversion.
+ */
+
+/**
+ * @brief  Count characters needed for `n`, including a leading sign.
+ *
+ * Accepts `long` so `INT_MIN` can be negated without signed overflow.
+ *
+ * @param  n  Widened integer value to measure.
+ * @return Character count excluding the terminating NUL byte.
+ */
 static int	count_digits(long n)
 {
 	int	len;
@@ -30,6 +43,16 @@ static int	count_digits(long n)
 	return (len);
 }
 
+/**
+ * @brief  Convert signed integer `n` into a newly allocated string.
+ *
+ * Widens `n` to `long` so `-INT_MIN` never triggers signed overflow UB,
+ * then fills digits right-to-left into an exact-sized buffer.
+ *
+ * @param  n  Integer value to format in base 10.
+ * @return Caller-owned NUL-terminated string (`free` required), or `NULL`
+ *         on allocation failure.
+ */
 char	*ft_itoa(int n)
 {
 	long	nb;

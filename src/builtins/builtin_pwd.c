@@ -12,6 +12,21 @@
 
 #include "minishell.h"
 
+/**
+ * @file builtin_pwd.c
+ * @brief Implementation of the pwd builtin with cached cwd/PWD fallback.
+ */
+
+/**
+ * @brief  Executes the pwd builtin command.
+ *
+ * Queries getcwd() first for the physical current directory and propagates
+ * any write() error via builtin_write_endl(). If getcwd() fails (e.g.,
+ * removed working directory), falls back to ctx->cwd then the PWD env var
+ * before reporting an error via perror().
+ * @param  ctx  Shell state providing the cwd cache and env_list fallback.
+ * @return 0 on success, 1 if no path is available or write() fails.
+ */
 int	ft_pwd(t_shell *ctx)
 {
 	char		*cwd;

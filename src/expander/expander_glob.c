@@ -12,6 +12,24 @@
 
 #include "minishell.h"
 
+/**
+ * @file expander_glob.c
+ * @brief Quote-aware '*' wildcard pathname expansion in current directory.
+ */
+
+/**
+ * @brief  Advance one step in iterative wildcard matching with backtrack.
+ *
+ * Uses @p idx as [pat_i, str_i, star_pat_i, star_str_i]. Only '*' chars
+ * whose parallel @p mask byte is '1' act as wildcards, keeping quoted or
+ * escaped asterisks literal.
+ *
+ * @param  pat   Expanded pattern string.
+ * @param  mask  Parallel mask ('1' for unquoted '*', '0' for literal).
+ * @param  str   Candidate filename being tested.
+ * @param  idx   4-element cursor/backtrack state array.
+ * @return 1 if matching progressed or backtracked, 0 on mismatch.
+ */
 static int	glob_advance(const char *pat, const char *mask, const char *str,
 	size_t idx[4])
 {
@@ -38,6 +56,13 @@ static int	glob_advance(const char *pat, const char *mask, const char *str,
 	return (0);
 }
 
+/**
+ * @brief  Match @p str against @p pat using the parallel wildcard @p mask.
+ * @param  pat   Pattern string.
+ * @param  mask  Parallel mask where '1' marks unquoted '*' wildcards.
+ * @param  str   Candidate directory entry name.
+ * @return true if @p str matches the entire pattern, false otherwise.
+ */
 static bool	glob_match(const char *pat, const char *mask, const char *str)
 {
 	size_t	idx[4];
@@ -56,6 +81,10 @@ static bool	glob_match(const char *pat, const char *mask, const char *str)
 	return (pat[idx[0]] == '\0');
 }
 
+/**
+ * @brief  Sort matched filenames in-place by ASCII order (POSIX C locale).
+ * @param  arr  NULL-terminated array of matched filename strings.
+ */
 static void	sort_matches(char **arr)
 {
 	size_t	i;
@@ -82,6 +111,18 @@ static void	sort_matches(char **arr)
 	}
 }
 
+/**
+ * @brief  Collect matching filenames from "." into @p *out.
+ *
+ * Skips "." and "..", suppresses hidden dotfiles unless @p pat explicitly
+ * starts with '.', and leaves @p *out NULL when @p pat contains '/' (no
+ * multi-segment path globbing) or opendir(".") fails.
+ *
+ * @param  pat   Pattern string.
+ * @param  mask  Parallel wildcard mask aligned with @p pat.
+ * @param  out   Receives NULL-terminated array of matches, or NULL.
+ * @return 1 on success, 0 on allocation failure.
+ */
 static int	collect_dir_matches(const char *pat, const char *mask, char ***out)
 {
 	DIR				*dir;
@@ -109,6 +150,17 @@ static int	collect_dir_matches(const char *pat, const char *mask, char ***out)
 	return (ok);
 }
 
+/**
+ * @brief  Expand one field via '*' globbing and append results to @p *dst.
+ *
+ * Preserves the literal @p pat as a single field when no directory entries
+ * match (standard POSIX non-nullglob behavior), or appends sorted matches.
+ *
+ * @param  pat   Field pattern string.
+ * @param  mask  Parallel wildcard mask ('1' for unquoted '*').
+ * @param  dst   Destination NULL-terminated field array.
+ * @return 1 on success, 0 on allocation failure.
+ */
 int	expand_glob_field(const char *pat, const char *mask, char ***dst)
 {
 	char	**matches;

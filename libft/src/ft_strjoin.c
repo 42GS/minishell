@@ -12,6 +12,22 @@
 
 #include "libft.h"
 
+/**
+ * @file ft_strjoin.c
+ * @brief Heap concatenation of two strings.
+ */
+
+/**
+ * @brief  Allocate a new string concatenating `s1` followed by `s2`.
+ *
+ * Guards against `NULL` inputs before measuring lengths so partial error
+ * paths fail cleanly without dereferencing `NULL`.
+ *
+ * @param  s1  Prefix string (must be non-NULL).
+ * @param  s2  Suffix string (must be non-NULL).
+ * @return Caller-owned concatenated string (`free` required), or `NULL`
+ *         if either input is `NULL` or `malloc` fails.
+ */
 char	*ft_strjoin(char const *s1, char const *s2)
 {
 	char	*joined;

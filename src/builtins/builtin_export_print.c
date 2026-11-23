@@ -12,6 +12,12 @@
 
 #include "minishell.h"
 
+/**
+ * @file builtin_export_print.c
+ * @brief ASCII sorting and escaped declaration printing for bare export.
+ */
+
+/** @brief Counts nodes in the environment linked list for array sizing. */
 static size_t	count_env_nodes(t_env_node *env)
 {
 	size_t	count;
@@ -25,6 +31,14 @@ static size_t	count_env_nodes(t_env_node *env)
 	return (count);
 }
 
+/**
+ * @brief  Sorts an array of environment node pointers in ASCII key order.
+ *
+ * Uses lexicographical ft_strcmp() comparison to match POSIX/C locale sort
+ * order without mutating the underlying env_list linked list.
+ * @param  arr    Array of borrowed t_env_node pointers to sort in place.
+ * @param  count  Number of elements in arr.
+ */
 static void	sort_env_nodes(t_env_node **arr, size_t count)
 {
 	size_t		i;
@@ -49,6 +63,15 @@ static void	sort_env_nodes(t_env_node **arr, size_t count)
 	}
 }
 
+/**
+ * @brief  Writes an exported value with shell-metacharacter escaping.
+ *
+ * Escapes '"', '$', and '\' with a leading backslash so the printed
+ * declare -x output remains safely reusable as shell input, checking each
+ * write() for I/O errors.
+ * @param  val  Variable value string to escape and write to stdout.
+ * @return 0 on success, 1 if any write() fails.
+ */
 static int	print_escaped_value(const char *val)
 {
 	size_t	i;
@@ -68,6 +91,14 @@ static int	print_escaped_value(const char *val)
 	return (0);
 }
 
+/**
+ * @brief  Formats one environment node as a "declare -x" line.
+ *
+ * Prints key="escaped_value" when value is non-NULL, or bare key without
+ * '=' when value is NULL, propagating any write() error immediately.
+ * @param  node  Environment node to format and write to stdout.
+ * @return 0 on success, 1 on write() failure.
+ */
 static int	print_export_node(t_env_node *node)
 {
 	if (builtin_write_str(STDOUT_FILENO, "declare -x ") != 0)
@@ -85,6 +116,14 @@ static int	print_export_node(t_env_node *node)
 	return (builtin_write_endl(STDOUT_FILENO, ""));
 }
 
+/**
+ * @brief  Prints all exported variables sorted in ASCII order by key.
+ *
+ * Allocates a temporary pointer array to sort without altering env_list
+ * order, prints each entry, and stops early if any write() fails.
+ * @param  env  Head of the shell environment list.
+ * @return 0 on success, 1 on malloc or write() failure.
+ */
 int	print_sorted_export(t_env_node *env)
 {
 	t_env_node	**arr;
