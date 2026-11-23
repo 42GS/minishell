@@ -40,6 +40,7 @@ typedef struct s_shell
 	char			*line;
 	bool			is_interactive;
 	bool			in_subshell;
+	bool			interrupted;
 	bool			has_backup_fds;
 	int				saved_in;
 	int				saved_out;

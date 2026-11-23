@@ -129,7 +129,18 @@ def run_pty_tests():
         out = read_until(master, b"minishell$ ", timeout=2.0)
         assert "hd_int=130" in out, f"Expected hd_int=130, got: {out!r}"
 
-        # 7. Empty prompt Ctrl+D -> prints exit and exits 0
+        # 7. Blocking child in || list + Ctrl+C -> aborts right-hand side, $? = 130
+        os.write(master, b"cat || echo RAN_AFTER_SIGINT\n")
+        read_until(master, b"RAN_AFTER_SIGINT\r\n", timeout=2.0)
+        time.sleep(0.1)
+        os.write(master, b"\x03")
+        out = read_until(master, b"minishell$ ", timeout=2.0)
+        assert "RAN_AFTER_SIGINT" not in out, f"OR rhs ran after Ctrl+C: {out!r}"
+        os.write(master, b"echo or_int=$?\n")
+        out2 = read_until(master, b"minishell$ ", timeout=2.0)
+        assert "or_int=130" in out2, f"Expected or_int=130, got: {out2!r}"
+
+        # 8. Empty prompt Ctrl+D -> prints exit and exits 0
         os.write(master, b"\x04")
         tail = drain_all(master, timeout=2.0)
         _, status = os.waitpid(pid, 0)
@@ -145,7 +156,7 @@ def run_pty_tests():
                 pass
         os.close(master)
 
-    print("[PTY-SIGNALS] All 7 interactive PTY signal tests PASSED!")
+    print("[PTY-SIGNALS] All 8 interactive PTY signal tests PASSED!")
 
 
 if __name__ == "__main__":

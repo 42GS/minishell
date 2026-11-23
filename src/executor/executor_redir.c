@@ -79,7 +79,7 @@ void	exec_cmd_in_child(t_ast_node *cmd, t_shell *ctx)
 
 	if (apply_redirections(cmd->redirs, ctx) != 0)
 		exit_child_clean(ctx, NULL, NULL, 1);
-	close_ast_heredocs(ctx->current_ast);
+	close_ast_heredocs(ctx->current_ast, NULL);
 	if (!expand_cmd_args(cmd, ctx))
 		exit_child_clean(ctx, NULL, NULL, 1);
 	if (!cmd->argv || !cmd->argv[0])

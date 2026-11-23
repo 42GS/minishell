@@ -85,14 +85,14 @@ void	run_heredoc_child(int fds[2], t_redir *redir, t_shell *ctx)
 	exit(1);
 }
 
-void	close_ast_heredocs(t_ast_node *node)
+void	close_ast_heredocs(t_ast_node *node, t_ast_node *skip)
 {
 	t_redir	*redir;
 
-	if (!node)
+	if (!node || node == skip)
 		return ;
-	close_ast_heredocs(node->left);
-	close_ast_heredocs(node->right);
+	close_ast_heredocs(node->left, skip);
+	close_ast_heredocs(node->right, skip);
 	redir = node->redirs;
 	while (redir)
 	{
