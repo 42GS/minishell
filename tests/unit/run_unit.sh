@@ -4,7 +4,15 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "$0")/../.." && pwd)"
 cd "$ROOT_DIR"
 
-make -C libft > /dev/null
+JOBS="$(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4)"
+make -j"$JOBS" all > /dev/null
+
+CORE_ARCHIVE="/tmp/libms_core_$$.a"
+trap 'rm -f "$CORE_ARCHIVE" "/tmp/minishell_unit_"*"_$$"' EXIT
+
+CORE_OBJS="$(find obj -name '*.o' ! -name 'main.o' | sort)"
+rm -f "$CORE_ARCHIVE"
+ar rcs "$CORE_ARCHIVE" $CORE_OBJS
 
 RL_FLAGS="-lreadline"
 if [ "$(uname -s)" = "Darwin" ] && command -v brew >/dev/null 2>&1; then
@@ -28,74 +36,21 @@ run_with_leak_check() {
     fi
 }
 
-cc -Wall -Wextra -Werror -I libft/include \
-    tests/unit/test_libft.c libft/libft.a \
-    -o /tmp/minishell_unit_libft
-run_with_leak_check /tmp/minishell_unit_libft
-rm -f /tmp/minishell_unit_libft
+run_unit_suite() {
+    local name="$1"
+    local src="$2"
+    shift 2
+    local bin="/tmp/minishell_unit_${name}_$$"
 
-cc -Wall -Wextra -Werror -I include -I libft/include \
-    tests/unit/test_lexer.c \
-    src/lexer/lexer.c src/lexer/lexer_word.c \
-    src/lexer/lexer_op.c src/lexer/lexer_token.c \
-    libft/libft.a \
-    -o /tmp/minishell_unit_lexer
-run_with_leak_check /tmp/minishell_unit_lexer
-rm -f /tmp/minishell_unit_lexer
+    cc -Wall -Wextra -Werror -I include -I libft/include "$src" "$@" -o "$bin"
+    run_with_leak_check "$bin"
+    rm -f "$bin"
+}
 
-cc -Wall -Wextra -Werror -I include -I libft/include \
-    tests/unit/test_parser.c \
-    src/lexer/lexer.c src/lexer/lexer_word.c \
-    src/lexer/lexer_op.c src/lexer/lexer_token.c \
-    src/parser/parser.c src/parser/parser_cmd.c \
-    src/parser/parser_ast.c src/parser/parser_utils.c \
-    libft/libft.a \
-    -o /tmp/minishell_unit_parser
-run_with_leak_check /tmp/minishell_unit_parser
-rm -f /tmp/minishell_unit_parser
-
-CORE_SRCS="src/shell_utils.c \
-    src/lexer/lexer.c src/lexer/lexer_word.c \
-    src/lexer/lexer_op.c src/lexer/lexer_token.c \
-    src/parser/parser.c src/parser/parser_cmd.c \
-    src/parser/parser_ast.c src/parser/parser_utils.c \
-    src/executor/executor.c src/executor/executor_pipe.c \
-    src/executor/executor_pipe_child.c src/executor/executor_wait.c \
-    src/executor/executor_path.c src/executor/executor_path_utils.c \
-    src/executor/executor_redir.c \
-    src/executor/executor_heredoc.c src/executor/executor_heredoc_child.c \
-    src/expander/expander.c src/expander/expander_utils.c \
-    src/expander/expander_split.c src/expander/expander_glob.c \
-    src/expander/expander_cmd.c \
-    src/env/env_core.c src/env/env_ops.c \
-    src/env/env_init.c src/env/env_array.c \
-    src/builtins/builtins.c src/builtins/builtin_echo.c \
-    src/builtins/builtin_cd.c src/builtins/builtin_pwd.c \
-    src/builtins/builtin_export.c src/builtins/builtin_export_print.c \
-    src/builtins/builtin_unset.c src/builtins/builtin_env.c \
-    src/builtins/builtin_exit.c \
-    src/signals/signals.c src/signals/signals_term.c"
-
-cc -Wall -Wextra -Werror -I include -I libft/include \
-    tests/unit/test_executor.c $CORE_SRCS libft/libft.a $RL_FLAGS \
-    -o /tmp/minishell_unit_executor
-run_with_leak_check /tmp/minishell_unit_executor
-rm -f /tmp/minishell_unit_executor
-
-cc -Wall -Wextra -Werror -I include -I libft/include \
-    tests/unit/test_redir.c $CORE_SRCS libft/libft.a $RL_FLAGS \
-    -o /tmp/minishell_unit_redir
-run_with_leak_check /tmp/minishell_unit_redir
-rm -f /tmp/minishell_unit_redir
-
-cc -Wall -Wextra -Werror -I include -I libft/include \
-    tests/unit/test_builtins.c $CORE_SRCS libft/libft.a $RL_FLAGS \
-    -o /tmp/minishell_unit_builtins
-run_with_leak_check /tmp/minishell_unit_builtins
-rm -f /tmp/minishell_unit_builtins
-
-cc -Wall -Wextra -Werror -I include -I libft/include \
-    tests/unit/test_signals.c $CORE_SRCS libft/libft.a $RL_FLAGS \
-    -o /tmp/minishell_unit_signals
-run_with_leak_check /tmp/minishell_unit_signals
-rm -f /tmp/minishell_unit_signals
+run_unit_suite libft tests/unit/test_libft.c libft/libft.a
+run_unit_suite lexer tests/unit/test_lexer.c "$CORE_ARCHIVE" libft/libft.a $RL_FLAGS
+run_unit_suite parser tests/unit/test_parser.c "$CORE_ARCHIVE" libft/libft.a $RL_FLAGS
+run_unit_suite executor tests/unit/test_executor.c "$CORE_ARCHIVE" libft/libft.a $RL_FLAGS
+run_unit_suite redir tests/unit/test_redir.c "$CORE_ARCHIVE" libft/libft.a $RL_FLAGS
+run_unit_suite builtins tests/unit/test_builtins.c "$CORE_ARCHIVE" libft/libft.a $RL_FLAGS
+run_unit_suite signals tests/unit/test_signals.c "$CORE_ARCHIVE" libft/libft.a $RL_FLAGS

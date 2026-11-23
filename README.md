@@ -136,6 +136,10 @@ python3 tests/e2e/test_signals_pty.py
 # 5. Valgrind 힙 메모리 릭 & 잔여 FD 0건 QA 13종 (Linux/CI 환경)
 bash tests/e2e/run_valgrind_qa.sh
 
+# (선택) macOS/로컬 환경에서 CI와 동일한 Linux 컨테이너로 원클릭 재현
+docker run --rm -v "$PWD:/work" -w /work ghcr.io/42gs/minishell-ci:latest \
+    bash -c "make -j && bash tests/unit/run_unit.sh && bash tests/e2e/run_valgrind_qa.sh"
+
 # 빌드 산출물 정리
 make fclean
 ```
