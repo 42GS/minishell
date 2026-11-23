@@ -6,7 +6,7 @@
 /*   By: yoshin <yoshin@student.42gyeongsan.kr>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/11/22 23:48:00 by yoshin            #+#    #+#             */
-/*   Updated: 2026/11/22 23:48:00 by yoshin           ###   ########.fr       */
+/*   Updated: 2026/11/23 12:15:00 by yoshin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,72 +25,65 @@ static char	*make_heredoc_tmp_path(int id)
 	return (path);
 }
 
-static int	write_heredoc_line(int fd, char *line, bool quoted, t_shell *ctx)
+static int	wait_heredoc_child(pid_t pid, t_shell *ctx)
 {
-	char	*out;
+	int	status;
 
-	if (quoted)
-		out = line;
-	else
+	while (waitpid(pid, &status, 0) == -1)
 	{
-		out = expand_heredoc_line(line, ctx);
-		if (!out)
+		if (errno != EINTR)
+		{
+			if (!ctx->in_subshell)
+				set_signal_state(SIG_STATE_INTERACTIVE);
 			return (0);
+		}
 	}
-	ft_putendl_fd(out, fd);
-	if (!quoted)
-		free(out);
-	return (1);
+	if (!ctx->in_subshell)
+		set_signal_state(SIG_STATE_INTERACTIVE);
+	if (WIFSIGNALED(status) && WTERMSIG(status) == SIGINT)
+	{
+		write(STDOUT_FILENO, "\n", 1);
+		g_signal_num = SIGINT;
+		return (0);
+	}
+	return (WIFEXITED(status) && WEXITSTATUS(status) == 0);
 }
 
-static int	read_heredoc_loop(int fd, const char *delim, bool quoted,
-	t_shell *ctx)
+static int	open_heredoc_rw(t_redir *redir, t_shell *ctx, char *path)
 {
-	char	*line;
+	int		fd;
+	pid_t	pid;
 	int		ok;
 
-	while (1)
-	{
-		if (ctx->is_interactive)
-			line = readline("> ");
-		else
-			line = read_stdin_line();
-		if (!line || g_signal_num == SIGINT || ft_strcmp(line, delim) == 0)
-		{
-			free(line);
-			break ;
-		}
-		ok = write_heredoc_line(fd, line, quoted, ctx);
-		free(line);
-		if (!ok)
-			return (0);
-	}
-	return (g_signal_num != SIGINT);
+	fd = open(path, O_WRONLY | O_CREAT | O_TRUNC, 0600);
+	if (fd < 0)
+		return (0);
+	if (!ctx->in_subshell)
+		set_signal_state(SIG_STATE_EXECUTION);
+	pid = fork();
+	if (pid == 0)
+		run_heredoc_child(fd, redir, path, ctx);
+	close(fd);
+	ok = 0;
+	if (pid > 0)
+		ok = wait_heredoc_child(pid, ctx);
+	else if (!ctx->in_subshell)
+		set_signal_state(SIG_STATE_INTERACTIVE);
+	return (ok);
 }
 
 static int	process_heredoc_redir(t_redir *redir, t_shell *ctx, int *id)
 {
-	char	*delim;
 	char	*path;
-	int		fd;
 	int		ok;
 
-	delim = strip_quotes_only(redir->target);
 	path = make_heredoc_tmp_path((*id)++);
-	ok = 0;
-	if (delim && path)
-	{
-		fd = open(path, O_WRONLY | O_CREAT | O_TRUNC, 0600);
-		if (fd >= 0)
-		{
-			ok = read_heredoc_loop(fd, delim, redir->quoted_delim, ctx);
-			close(fd);
-		}
-		if (ok)
-			redir->heredoc_fd = open(path, O_RDONLY);
-		unlink(path);
-	}
-	free(delim);
+	if (!path)
+		return (0);
+	ok = open_heredoc_rw(redir, ctx, path);
+	if (ok)
+		redir->heredoc_fd = open(path, O_RDONLY);
+	unlink(path);
 	free(path);
 	return (ok && redir->heredoc_fd >= 0);
 }

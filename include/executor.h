@@ -39,10 +39,12 @@ char	*resolve_cmd_path(const char *cmd, t_shell *ctx, int *err_code);
 
 void	close_all_pipes(int *pipes, int pipe_count);
 int		spawn_pipe_children(t_pipe_ctx *pctx, t_shell *ctx);
-int		wait_pipeline(pid_t *pids, int count);
+int		wait_pipeline(pid_t *pids, int count, t_shell *ctx);
+int		wait_child_status(pid_t pid, t_shell *ctx);
 int		normalize_wait_status(int status);
 void	exec_cmd_in_child(t_ast_node *cmd, t_shell *ctx);
 void	print_exec_error(const char *cmd, const char *msg);
+void	run_heredoc_child(int fd, t_redir *redir, char *path, t_shell *ctx);
 
 char	*expand_word(const char *raw, t_shell *ctx);
 char	*expand_heredoc_line(const char *raw, t_shell *ctx);

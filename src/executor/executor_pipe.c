@@ -79,9 +79,11 @@ int	execute_pipeline(t_ast_node *node, t_shell *ctx)
 		cleanup_pipe_ctx(&pctx);
 		return (1);
 	}
+	if (!ctx->in_subshell)
+		set_signal_state(SIG_STATE_EXECUTION);
 	spawned = spawn_pipe_children(&pctx, ctx);
 	close_all_pipes(pctx.pipes, pctx.count - 1);
-	status = wait_pipeline(pctx.pids, spawned);
+	status = wait_pipeline(pctx.pids, spawned, ctx);
 	cleanup_pipe_ctx(&pctx);
 	if (spawned < pctx.count)
 		return (1);

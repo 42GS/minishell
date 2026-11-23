@@ -47,9 +47,11 @@ SRCS		= $(SRC_DIR)/main.c \
 			  $(SRC_DIR)/executor/executor.c \
 			  $(SRC_DIR)/executor/executor_pipe.c \
 			  $(SRC_DIR)/executor/executor_pipe_child.c \
+			  $(SRC_DIR)/executor/executor_wait.c \
 			  $(SRC_DIR)/executor/executor_path.c \
 			  $(SRC_DIR)/executor/executor_redir.c \
 			  $(SRC_DIR)/executor/executor_heredoc.c \
+			  $(SRC_DIR)/executor/executor_heredoc_child.c \
 			  $(SRC_DIR)/expander/expander.c \
 			  $(SRC_DIR)/expander/expander_utils.c \
 			  $(SRC_DIR)/env/env_core.c \
@@ -65,7 +67,8 @@ SRCS		= $(SRC_DIR)/main.c \
 			  $(SRC_DIR)/builtins/builtin_unset.c \
 			  $(SRC_DIR)/builtins/builtin_env.c \
 			  $(SRC_DIR)/builtins/builtin_exit.c \
-			  $(SRC_DIR)/signals/signals_stub.c
+			  $(SRC_DIR)/signals/signals.c \
+			  $(SRC_DIR)/signals/signals_term.c
 
 OBJS		= $(SRCS:$(SRC_DIR)/%.c=$(OBJ_DIR)/%.o)
 

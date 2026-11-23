@@ -42,16 +42,13 @@ static void	run_pipe_node(t_pipe_ctx *pctx, int idx, t_shell *ctx)
 	free(pctx->pids);
 	free(pctx->pipes);
 	ctx->in_subshell = true;
+	set_signal_state(SIG_STATE_CHILD);
 	if (cmd->type == NODE_CMD)
 		exec_cmd_in_child(cmd, ctx);
 	if (apply_redirections(cmd->redirs, ctx) != 0)
-	{
-		free_child_resources(ctx);
-		exit(1);
-	}
+		exit_child_clean(ctx, NULL, NULL, 1);
 	status = execute_ast(cmd->left, ctx);
-	free_child_resources(ctx);
-	exit(status);
+	exit_child_clean(ctx, NULL, NULL, status);
 }
 
 int	spawn_pipe_children(t_pipe_ctx *pctx, t_shell *ctx)
@@ -72,32 +69,4 @@ int	spawn_pipe_children(t_pipe_ctx *pctx, t_shell *ctx)
 		i++;
 	}
 	return (i);
-}
-
-int	normalize_wait_status(int status)
-{
-	if (WIFEXITED(status))
-		return (WEXITSTATUS(status));
-	if (WIFSIGNALED(status))
-		return (128 + WTERMSIG(status));
-	return (1);
-}
-
-int	wait_pipeline(pid_t *pids, int count)
-{
-	int	i;
-	int	status;
-	int	last_status;
-
-	last_status = 0;
-	i = 0;
-	while (i < count)
-	{
-		if (waitpid(pids[i], &status, 0) == -1)
-			return (1);
-		if (i == count - 1)
-			last_status = normalize_wait_status(status);
-		i++;
-	}
-	return (last_status);
 }

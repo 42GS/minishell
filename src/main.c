@@ -24,7 +24,7 @@ static int	init_shell(t_shell *ctx, char **envp)
 	ctx->is_interactive = isatty(STDIN_FILENO);
 	ctx->cwd = getcwd(NULL, 0);
 	if (ctx->is_interactive)
-		tcgetattr(STDIN_FILENO, &ctx->orig_term);
+		disable_echoctl(&ctx->orig_term);
 	return (0);
 }
 
@@ -60,8 +60,8 @@ static void	process_line(t_shell *ctx)
 	}
 	if (collect_heredocs(ctx->current_ast, ctx))
 		execute_ast(ctx->current_ast, ctx);
-	else if (g_signal_num == SIGINT)
-		ctx->last_exit_status = 130;
+	else
+		sync_signal_status(ctx);
 	free_ast(&ctx->current_ast);
 }
 
@@ -74,8 +74,13 @@ static void	run_shell_loop(t_shell *ctx)
 			ctx->line = readline(SHELL_PROMPT);
 		else
 			ctx->line = read_stdin_line();
+		sync_signal_status(ctx);
 		if (!ctx->line)
+		{
+			if (ctx->is_interactive)
+				ft_putendl_fd("exit", STDERR_FILENO);
 			break ;
+		}
 		if (ctx->is_interactive && *(ctx->line))
 			add_history(ctx->line);
 		process_line(ctx);
