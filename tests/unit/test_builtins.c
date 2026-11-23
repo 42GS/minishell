@@ -117,6 +117,55 @@ static void	test_exit_64bit_and_dispatch(void)
 	assert(WIFEXITED(status) && WEXITSTATUS(status) == 3);
 }
 
+static void	assert_shlvl_result(const char *raw_env, const char *expected)
+{
+	t_shell		ctx;
+	char		*envp[2];
+	const char	*val;
+
+	envp[0] = (char *)raw_env;
+	envp[1] = NULL;
+	ft_bzero(&ctx, sizeof(t_shell));
+	ctx.env_list = init_env_list(envp);
+	init_env_defaults(&ctx);
+	val = env_get(ctx.env_list, "SHLVL");
+	assert(val != NULL && strcmp(val, expected) == 0);
+	free_child_resources(&ctx);
+}
+
+static void	test_shlvl_trailing_spaces(void)
+{
+	assert_shlvl_result("SHLVL=5  ", "6");
+	assert_shlvl_result("SHLVL=  5  ", "6");
+	assert_shlvl_result("SHLVL=5 a", "1");
+	assert_shlvl_result("SHLVL=  ", "1");
+}
+
+static void	test_builtin_write_errors(void)
+{
+	t_shell	ctx;
+	char	*env_args[2];
+	char	*exp_args[2];
+	int		saved_out;
+
+	ft_bzero(&ctx, sizeof(t_shell));
+	assert(env_set(&ctx.env_list, "EXP_TEST", "a$b\"c\\d") == 0);
+	env_args[0] = "env";
+	env_args[1] = NULL;
+	exp_args[0] = "export";
+	exp_args[1] = NULL;
+	fflush(stdout);
+	saved_out = dup(STDOUT_FILENO);
+	assert(saved_out >= 0);
+	assert(close(STDOUT_FILENO) == 0);
+	assert(ft_pwd(&ctx) == 1);
+	assert(ft_env(env_args, &ctx) == 1);
+	assert(ft_export(exp_args, &ctx) == 1);
+	assert(dup2(saved_out, STDOUT_FILENO) == STDOUT_FILENO);
+	close(saved_out);
+	free_child_resources(&ctx);
+}
+
 int	main(void)
 {
 	printf("[UNIT] Running 7 Builtins & Env unit tests...\n");
@@ -124,6 +173,8 @@ int	main(void)
 	test_export_and_unset_builtins();
 	test_cd_and_pwd_builtins();
 	test_exit_64bit_and_dispatch();
+	test_shlvl_trailing_spaces();
+	test_builtin_write_errors();
 	printf("[UNIT] All Builtins & Env unit tests PASSED!\n");
 	return (0);
 }

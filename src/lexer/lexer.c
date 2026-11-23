@@ -21,9 +21,8 @@ int	is_operator_start(const char *s)
 {
 	if (!s || !*s)
 		return (0);
-	if (*s == '|' || *s == '<' || *s == '>' || *s == '(' || *s == ')')
-		return (1);
-	if (s[0] == '&' && s[1] == '&')
+	if (*s == '|' || *s == '<' || *s == '>' || *s == '(' || *s == ')'
+		|| *s == '&')
 		return (1);
 	return (0);
 }
@@ -33,13 +32,20 @@ static int	lexer_step(const char *in, size_t *i, t_token **head, int *err)
 	int	ret;
 
 	if (is_operator_start(&in[*i]))
-		return (extract_op_token(in, i, head));
-	ret = extract_word_token(in, i, head);
+		ret = extract_op_token(in, i, head);
+	else
+		ret = extract_word_token(in, i, head);
 	if (ret == -1)
 	{
 		lexer_syntax_error("minishell: syntax error: unclosed quote", head,
 			err);
 		return (-1);
+	}
+	if (ret == 0)
+	{
+		free_tokens(head);
+		if (err)
+			*err = 1;
 	}
 	return (ret);
 }
@@ -79,10 +85,8 @@ t_token	*tokenize_input(const char *input, int *err_code)
 		if (!input[i])
 			break ;
 		ret = lexer_step(input, &i, &head, err_code);
-		if (ret < 0)
+		if (ret <= 0)
 			return (NULL);
-		if (ret == 0)
-			return (free_tokens(&head), NULL);
 	}
 	return (append_eof(&head, err_code));
 }

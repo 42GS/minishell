@@ -10,6 +10,7 @@ static void	test_string_utils(void)
 	char	*sub;
 	char	*joined;
 
+	assert(ft_strdup(NULL) == NULL);
 	dup = ft_strdup("minishell");
 	assert(dup != NULL && strcmp(dup, "minishell") == 0);
 	assert(ft_strlen(dup) == 9);

@@ -16,22 +16,20 @@ int	ft_pwd(t_shell *ctx)
 {
 	char		*cwd;
 	const char	*fallback;
+	int			ret;
 
 	cwd = getcwd(NULL, 0);
 	if (cwd)
 	{
-		ft_putendl_fd(cwd, STDOUT_FILENO);
+		ret = builtin_write_endl(STDOUT_FILENO, cwd);
 		free(cwd);
-		return (0);
+		return (ret);
 	}
 	fallback = ctx->cwd;
 	if (!fallback)
 		fallback = env_get(ctx->env_list, "PWD");
 	if (fallback)
-	{
-		ft_putendl_fd((char *)fallback, STDOUT_FILENO);
-		return (0);
-	}
+		return (builtin_write_endl(STDOUT_FILENO, fallback));
 	perror("minishell: pwd");
 	return (1);
 }

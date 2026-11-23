@@ -27,20 +27,36 @@ void	close_all_pipes(int *pipes, int pipe_count)
 	}
 }
 
+static int	setup_pipe_fds(t_pipe_ctx *pctx, int idx)
+{
+	if (idx > 0 && dup2(pctx->pipes[(idx - 1) * 2], STDIN_FILENO) == -1)
+	{
+		perror("minishell: dup2");
+		return (1);
+	}
+	if (idx < pctx->count - 1
+		&& dup2(pctx->pipes[idx * 2 + 1], STDOUT_FILENO) == -1)
+	{
+		perror("minishell: dup2");
+		return (1);
+	}
+	return (0);
+}
+
 static void	run_pipe_node(t_pipe_ctx *pctx, int idx, t_shell *ctx)
 {
 	t_ast_node	*cmd;
 	int			status;
+	int			dup_err;
 
-	if (idx > 0)
-		dup2(pctx->pipes[(idx - 1) * 2], STDIN_FILENO);
-	if (idx < pctx->count - 1)
-		dup2(pctx->pipes[idx * 2 + 1], STDOUT_FILENO);
+	dup_err = setup_pipe_fds(pctx, idx);
 	close_all_pipes(pctx->pipes, pctx->count - 1);
 	cmd = pctx->cmds[idx];
 	free(pctx->cmds);
 	free(pctx->pids);
 	free(pctx->pipes);
+	if (dup_err != 0)
+		exit_child_clean(ctx, NULL, NULL, 1);
 	ctx->in_subshell = true;
 	set_signal_state(SIG_STATE_CHILD);
 	if (cmd->type == NODE_CMD)

@@ -49,7 +49,7 @@ static void	sort_env_nodes(t_env_node **arr, size_t count)
 	}
 }
 
-static void	print_escaped_value(const char *val)
+static int	print_escaped_value(const char *val)
 {
 	size_t	i;
 
@@ -57,24 +57,32 @@ static void	print_escaped_value(const char *val)
 	while (val[i])
 	{
 		if (val[i] == '"' || val[i] == '$' || val[i] == '\\')
-			write(STDOUT_FILENO, "\\", 1);
-		write(STDOUT_FILENO, &val[i], 1);
+		{
+			if (write(STDOUT_FILENO, "\\", 1) < 0)
+				return (1);
+		}
+		if (write(STDOUT_FILENO, &val[i], 1) < 0)
+			return (1);
 		i++;
 	}
+	return (0);
 }
 
-static void	print_export_node(t_env_node *node)
+static int	print_export_node(t_env_node *node)
 {
-	ft_putstr_fd("declare -x ", STDOUT_FILENO);
-	ft_putstr_fd(node->key, STDOUT_FILENO);
+	if (builtin_write_str(STDOUT_FILENO, "declare -x ") != 0)
+		return (1);
+	if (builtin_write_str(STDOUT_FILENO, node->key) != 0)
+		return (1);
 	if (node->value)
 	{
-		ft_putstr_fd("=\"", STDOUT_FILENO);
-		print_escaped_value(node->value);
-		ft_putendl_fd("\"", STDOUT_FILENO);
+		if (builtin_write_str(STDOUT_FILENO, "=\"") != 0)
+			return (1);
+		if (print_escaped_value(node->value) != 0)
+			return (1);
+		return (builtin_write_endl(STDOUT_FILENO, "\""));
 	}
-	else
-		ft_putendl_fd("", STDOUT_FILENO);
+	return (builtin_write_endl(STDOUT_FILENO, ""));
 }
 
 int	print_sorted_export(t_env_node *env)
@@ -82,6 +90,7 @@ int	print_sorted_export(t_env_node *env)
 	t_env_node	**arr;
 	size_t		count;
 	size_t		i;
+	int			ret;
 
 	count = count_env_nodes(env);
 	if (count == 0)
@@ -97,8 +106,9 @@ int	print_sorted_export(t_env_node *env)
 	}
 	sort_env_nodes(arr, count);
 	i = 0;
-	while (i < count)
-		print_export_node(arr[i++]);
+	ret = 0;
+	while (i < count && ret == 0)
+		ret = print_export_node(arr[i++]);
 	free(arr);
-	return (0);
+	return (ret);
 }
