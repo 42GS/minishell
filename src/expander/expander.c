@@ -6,7 +6,7 @@
 /*   By: yoshin <yoshin@student.42gyeongsan.kr>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/11/22 23:48:00 by yoshin            #+#    #+#             */
-/*   Updated: 2026/11/22 23:48:00 by yoshin           ###   ########.fr       */
+/*   Updated: 2026/11/23 13:55:00 by yoshin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,18 +19,28 @@ static int	is_var_char(char c, int first)
 	return (ft_isalnum(c) || c == '_');
 }
 
-static char	*expand_dollar(const char *s, size_t *i, t_shell *ctx)
+static char	*expand_special_dollar(const char *s, size_t *i, t_shell *ctx)
+{
+	if (s[*i] == '?')
+	{
+		(*i)++;
+		return (ft_itoa(ctx->last_exit_status));
+	}
+	(*i)++;
+	if (s[*i - 1] == '0')
+		return (ft_strdup("minishell"));
+	return (ft_strdup(""));
+}
+
+char	*expand_dollar(const char *s, size_t *i, t_shell *ctx)
 {
 	size_t		start;
 	char		*name;
 	const char	*val;
 
 	(*i)++;
-	if (s[*i] == '?')
-	{
-		(*i)++;
-		return (ft_itoa(ctx->last_exit_status));
-	}
+	if (s[*i] == '?' || ft_isdigit((unsigned char)s[*i]))
+		return (expand_special_dollar(s, i, ctx));
 	if (!is_var_char(s[*i], 1))
 		return (ft_strdup("$"));
 	start = *i;
@@ -46,31 +56,6 @@ static char	*expand_dollar(const char *s, size_t *i, t_shell *ctx)
 	return (ft_strdup(val));
 }
 
-static int	step_quote(char c, t_quote_state *st)
-{
-	if (*st == STATE_GENERAL && c == '\'')
-	{
-		*st = STATE_SQUOTE;
-		return (1);
-	}
-	if (*st == STATE_SQUOTE && c == '\'')
-	{
-		*st = STATE_GENERAL;
-		return (1);
-	}
-	if (*st == STATE_GENERAL && c == '"')
-	{
-		*st = STATE_DQUOTE;
-		return (1);
-	}
-	if (*st == STATE_DQUOTE && c == '"')
-	{
-		*st = STATE_GENERAL;
-		return (1);
-	}
-	return (0);
-}
-
 char	*expand_word(const char *raw, t_shell *ctx)
 {
 	t_quote_state	st;
@@ -83,6 +68,9 @@ char	*expand_word(const char *raw, t_shell *ctx)
 	while (res && raw && raw[i])
 	{
 		if (step_quote(raw[i], &st))
+			i++;
+		else if (st == STATE_GENERAL && raw[i] == '$'
+			&& (raw[i + 1] == '"' || raw[i + 1] == '\''))
 			i++;
 		else if (raw[i] == '$' && st != STATE_SQUOTE)
 		{

@@ -41,7 +41,7 @@ static int	apply_single_redir(t_redir *redir, t_shell *ctx)
 
 	if (redir->type == REDIR_HEREDOC)
 		return (apply_heredoc_fd(redir));
-	path = expand_word(redir->target, ctx);
+	path = expand_redir_target(redir->target, ctx);
 	if (!path)
 		return (1);
 	fd = open_redir_file(redir, path);

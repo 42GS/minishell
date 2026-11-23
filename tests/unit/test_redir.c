@@ -118,6 +118,43 @@ static void	test_heredoc_excl_no_clobber(t_shell *ctx)
 	assert(n == 8 && memcmp(buf, "keep_me\n", 8) == 0);
 }
 
+static void	test_word_splitting_and_ambig(t_shell *ctx)
+{
+	char	**f;
+	char	*out;
+	int		err;
+
+	assert(env_set(&ctx->env_list, "MS_WS", "a   b") == 0);
+	assert(env_set(&ctx->env_list, "MS_SP", "   ") == 0);
+	f = expand_word_fields("$MS_WS", ctx, &err);
+	assert(!err && f && strcmp(f[0], "a") == 0
+		&& strcmp(f[1], "b") == 0 && f[2] == NULL);
+	free_str_array(f);
+	f = expand_word_fields("\"$MS_WS\"", ctx, &err);
+	assert(!err && f && strcmp(f[0], "a   b") == 0 && f[1] == NULL);
+	free_str_array(f);
+	f = expand_word_fields("pre$MS_WS\"post\"", ctx, &err);
+	assert(!err && f && strcmp(f[0], "prea") == 0
+		&& strcmp(f[1], "bpost") == 0 && f[2] == NULL);
+	free_str_array(f);
+	f = expand_word_fields("$MS_SP", ctx, &err);
+	assert(!err && f == NULL);
+	f = expand_word_fields("\"\"$MS_SP", ctx, &err);
+	assert(!err && f && strcmp(f[0], "") == 0 && f[1] == NULL);
+	free_str_array(f);
+	f = expand_word_fields("$MS_SP\"\"", ctx, &err);
+	assert(!err && f && strcmp(f[0], "") == 0 && f[1] == NULL);
+	free_str_array(f);
+	out = expand_word("$\"hello\" $'world' \"$\"\"a\" $1abc", ctx);
+	assert(out && strcmp(out, "hello world $a abc") == 0);
+	free(out);
+	assert(expand_redir_target("$MS_NO_SUCH", ctx) == NULL);
+	assert(expand_redir_target("$MS_WS", ctx) == NULL);
+	out = expand_redir_target("\"$MS_WS\"", ctx);
+	assert(out && strcmp(out, "a   b") == 0);
+	free(out);
+}
+
 int	main(void)
 {
 	t_shell	ctx;
@@ -132,6 +169,7 @@ int	main(void)
 	test_file_redirections(&ctx);
 	test_heredoc_collection(&ctx);
 	test_heredoc_excl_no_clobber(&ctx);
+	test_word_splitting_and_ambig(&ctx);
 	free_child_resources(&ctx);
 	printf("[UNIT] All Redirection & Heredoc unit tests PASSED!\n");
 	return (0);

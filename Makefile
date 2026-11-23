@@ -54,6 +54,8 @@ SRCS		= $(SRC_DIR)/main.c \
 			  $(SRC_DIR)/executor/executor_heredoc_child.c \
 			  $(SRC_DIR)/expander/expander.c \
 			  $(SRC_DIR)/expander/expander_utils.c \
+			  $(SRC_DIR)/expander/expander_split.c \
+			  $(SRC_DIR)/expander/expander_cmd.c \
 			  $(SRC_DIR)/env/env_core.c \
 			  $(SRC_DIR)/env/env_ops.c \
 			  $(SRC_DIR)/env/env_init.c \
