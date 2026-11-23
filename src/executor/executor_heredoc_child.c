@@ -66,21 +66,41 @@ static int	read_heredoc_loop(int fd, const char *delim, bool quoted,
 	return (1);
 }
 
-void	run_heredoc_child(int fd, t_redir *redir, char *path, t_shell *ctx)
+void	run_heredoc_child(int fds[2], t_redir *redir, t_shell *ctx)
 {
 	char	*delim;
 	int		ok;
 
+	close(fds[0]);
 	set_signal_state(SIG_STATE_HEREDOC);
 	delim = strip_quotes_only(redir->target);
 	ok = 0;
 	if (delim)
-		ok = read_heredoc_loop(fd, delim, redir->quoted_delim, ctx);
-	close(fd);
+		ok = read_heredoc_loop(fds[1], delim, redir->quoted_delim, ctx);
+	close(fds[1]);
 	free(delim);
-	free(path);
 	free_child_resources(ctx);
 	if (ok)
 		exit(0);
 	exit(1);
+}
+
+void	close_ast_heredocs(t_ast_node *node)
+{
+	t_redir	*redir;
+
+	if (!node)
+		return ;
+	close_ast_heredocs(node->left);
+	close_ast_heredocs(node->right);
+	redir = node->redirs;
+	while (redir)
+	{
+		if (redir->heredoc_fd >= 0)
+		{
+			close(redir->heredoc_fd);
+			redir->heredoc_fd = -1;
+		}
+		redir = redir->next;
+	}
 }
