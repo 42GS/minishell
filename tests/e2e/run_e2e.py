@@ -59,6 +59,12 @@ def main():
             ("builtin_exit_non_num", "exit not_a_num\n"),
             ("heredoc_no_sibling_fd_leak", "cat << EOF | /bin/sh -c \"ls /dev/fd\"\nhi\nEOF\n"),
             ("heredoc_multi_same_cmd", "cat << A << B\nfirst\nA\nsecond\nB\n"),
+            ("exp_word_split_cmd", "export A=\"echo hello world\"\n$A\n"),
+            ("exp_word_split_args", "export X=\"a   b\"\nprintf \"[%s]\\n\" $X\nprintf \"[%s]\\n\" \"$X\"\n"),
+            ("exp_spaces_only_var", "export S=\"   \"\n$S\n"),
+            ("exp_dollar_quotes_digit", "echo $\"hello\" $'world' \"$\"\"a\" $1abc $9x\n"),
+            ("exp_ambig_redir", "echo hi > $UNDEF_CI_99\nexport F=\"ci_a ci_b\"\necho hi > $F\n"),
+            ("exp_export_no_split", "export V=\"a b\"\nexport K=$V\necho \"[$K]\"\n"),
         ]
         for name, script in smoke_cases:
             b_rc, b_out, _ = run_shell("bash", script)

@@ -31,6 +31,13 @@ typedef struct s_pipe_ctx
 	pid_t		*pids;
 }	t_pipe_ctx;
 
+typedef struct s_exp_buf
+{
+	char			**fields;
+	char			*cur;
+	t_quote_state	st;
+}	t_exp_buf;
+
 int		execute_ast(t_ast_node *node, t_shell *ctx);
 int		execute_pipeline(t_ast_node *node, t_shell *ctx);
 int		apply_redirections(t_redir *redirs, t_shell *ctx);
@@ -47,9 +54,13 @@ void	print_exec_error(const char *cmd, const char *msg);
 void	run_heredoc_child(int fds[2], t_redir *redir, t_shell *ctx);
 void	close_ast_heredocs(t_ast_node *node);
 
+int		step_quote(char c, t_quote_state *st);
+char	*expand_dollar(const char *s, size_t *i, t_shell *ctx);
 char	*expand_word(const char *raw, t_shell *ctx);
 char	*expand_heredoc_line(const char *raw, t_shell *ctx);
 char	*strip_quotes_only(const char *raw);
+char	**expand_word_fields(const char *raw, t_shell *ctx, int *err);
+char	*expand_redir_target(const char *raw, t_shell *ctx);
 int		expand_cmd_args(t_ast_node *cmd, t_shell *ctx);
 int		append_char_str(char **res, char c);
 int		append_str_free(char **res, char *chunk);
