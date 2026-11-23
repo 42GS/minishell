@@ -176,6 +176,81 @@ static void	test_expander_long_strbuf(t_shell *ctx)
 	free(expanded);
 }
 
+static void	test_wildcard_globbing(t_shell *ctx)
+{
+	char		orig_cwd[4096];
+	char		**f;
+	char		*out;
+	int			err;
+	int			fd;
+
+	assert(getcwd(orig_cwd, sizeof(orig_cwd)) != NULL);
+	mkdir("/tmp/ms_u_glob", 0755);
+	assert(chdir("/tmp/ms_u_glob") == 0);
+	fd = open("Z.c", O_WRONLY | O_CREAT | O_TRUNC, 0644);
+	assert(fd >= 0);
+	close(fd);
+	fd = open("a.c", O_WRONLY | O_CREAT | O_TRUNC, 0644);
+	assert(fd >= 0);
+	close(fd);
+	fd = open("b.c", O_WRONLY | O_CREAT | O_TRUNC, 0644);
+	assert(fd >= 0);
+	close(fd);
+	fd = open("ab.txt", O_WRONLY | O_CREAT | O_TRUNC, 0644);
+	assert(fd >= 0);
+	close(fd);
+	fd = open(".hidden", O_WRONLY | O_CREAT | O_TRUNC, 0644);
+	assert(fd >= 0);
+	close(fd);
+	f = expand_word_fields("*", ctx, &err);
+	assert(!err && f && strcmp(f[0], "Z.c") == 0 && strcmp(f[1], "a.c") == 0
+		&& strcmp(f[2], "ab.txt") == 0 && strcmp(f[3], "b.c") == 0
+		&& f[4] == NULL);
+	free_str_array(f);
+	f = expand_word_fields("*.c", ctx, &err);
+	assert(!err && f && strcmp(f[0], "Z.c") == 0 && strcmp(f[1], "a.c") == 0
+		&& strcmp(f[2], "b.c") == 0 && f[3] == NULL);
+	free_str_array(f);
+	f = expand_word_fields(".*", ctx, &err);
+	assert(!err && f && strcmp(f[0], ".hidden") == 0 && f[1] == NULL);
+	free_str_array(f);
+	f = expand_word_fields("\"*\"", ctx, &err);
+	assert(!err && f && strcmp(f[0], "*") == 0 && f[1] == NULL);
+	free_str_array(f);
+	f = expand_word_fields("'*'", ctx, &err);
+	assert(!err && f && strcmp(f[0], "*") == 0 && f[1] == NULL);
+	free_str_array(f);
+	f = expand_word_fields("\"a\"*", ctx, &err);
+	assert(!err && f && strcmp(f[0], "a.c") == 0
+		&& strcmp(f[1], "ab.txt") == 0 && f[2] == NULL);
+	free_str_array(f);
+	f = expand_word_fields("a\"*\"", ctx, &err);
+	assert(!err && f && strcmp(f[0], "a*") == 0 && f[1] == NULL);
+	free_str_array(f);
+	f = expand_word_fields("no_match_*", ctx, &err);
+	assert(!err && f && strcmp(f[0], "no_match_*") == 0 && f[1] == NULL);
+	free_str_array(f);
+	assert(env_set(&ctx->env_list, "MS_GPAT", "*.txt") == 0);
+	f = expand_word_fields("$MS_GPAT", ctx, &err);
+	assert(!err && f && strcmp(f[0], "ab.txt") == 0 && f[1] == NULL);
+	free_str_array(f);
+	f = expand_word_fields("\"$MS_GPAT\"", ctx, &err);
+	assert(!err && f && strcmp(f[0], "*.txt") == 0 && f[1] == NULL);
+	free_str_array(f);
+	env_unset(&ctx->env_list, "MS_GPAT");
+	out = expand_redir_target("*.txt", ctx);
+	assert(out && strcmp(out, "ab.txt") == 0);
+	free(out);
+	assert(expand_redir_target("*.c", ctx) == NULL);
+	unlink("Z.c");
+	unlink("a.c");
+	unlink("b.c");
+	unlink("ab.txt");
+	unlink(".hidden");
+	assert(chdir(orig_cwd) == 0);
+	rmdir("/tmp/ms_u_glob");
+}
+
 int	main(void)
 {
 	t_shell	ctx;
@@ -192,6 +267,7 @@ int	main(void)
 	test_heredoc_collection(&ctx);
 	test_heredoc_excl_no_clobber(&ctx);
 	test_word_splitting_and_ambig(&ctx);
+	test_wildcard_globbing(&ctx);
 	free_child_resources(&ctx);
 	printf("[UNIT] All Redirection & Heredoc unit tests PASSED!\n");
 	return (0);

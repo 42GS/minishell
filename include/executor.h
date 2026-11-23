@@ -19,6 +19,7 @@
 # include <fcntl.h>
 # include <errno.h>
 # include <string.h>
+# include <dirent.h>
 # include "parser.h"
 
 typedef struct s_shell	t_shell;
@@ -35,6 +36,8 @@ typedef struct s_exp_buf
 {
 	char			**fields;
 	t_strbuf		cur;
+	t_strbuf		mask;
+	bool			has_wild;
 	t_quote_state	st;
 }	t_exp_buf;
 
@@ -64,6 +67,7 @@ char	*strip_quotes_only(const char *raw);
 char	**expand_word_fields(const char *raw, t_shell *ctx, int *err);
 char	*expand_redir_target(const char *raw, t_shell *ctx);
 int		expand_cmd_args(t_ast_node *cmd, t_shell *ctx);
+int		expand_glob_field(const char *pat, const char *mask, char ***dst);
 bool	is_dollar_quote(const char *s, size_t i, t_quote_state st);
 int		sb_push_str_free(t_strbuf *sb, char *chunk);
 

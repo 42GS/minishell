@@ -8,6 +8,7 @@
     {"name": "subshell_redirection_and_pipe", "input": "(echo l1 && echo l2) > /tmp/ms_b5_sub.txt\n(cat && echo l3) < /tmp/ms_b5_sub.txt | tr a-z A-Z\nrm -f /tmp/ms_b5_sub.txt\n"},
     {"name": "subshell_heredoc_and_exit", "input": "(exit 42)\necho rc=$?\n(cat && echo end) << EOF\nin_sub\nEOF\n"},
     {"name": "wildcard_cwd", "input": "echo Make*\n"},
+    {"name": "wildcard_quoted_and_dotfiles", "input": "echo \"*\" '*' .* \"Make\"* Make\"*\"\n"},
     {"name": "wildcard_nomatch_fallback", "input": "echo nonexistent_wildcard_*\n"}
   ]
 }

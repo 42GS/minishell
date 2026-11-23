@@ -65,7 +65,8 @@ CORE_SRCS="src/shell_utils.c \
     src/executor/executor_redir.c \
     src/executor/executor_heredoc.c src/executor/executor_heredoc_child.c \
     src/expander/expander.c src/expander/expander_utils.c \
-    src/expander/expander_split.c src/expander/expander_cmd.c \
+    src/expander/expander_split.c src/expander/expander_glob.c \
+    src/expander/expander_cmd.c \
     src/env/env_core.c src/env/env_ops.c \
     src/env/env_init.c src/env/env_array.c \
     src/builtins/builtins.c src/builtins/builtin_echo.c \
