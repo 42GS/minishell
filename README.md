@@ -6,10 +6,10 @@
 [![42 Norminette](https://img.shields.io/badge/42%20Norminette-0%20errors-brightgreen)](https://github.com/42GS/minishell/actions/workflows/ci.yml)
 [![Valgrind QA](https://img.shields.io/badge/Valgrind-0%20heap%20%26%20FD%20leaks-brightgreen)](https://github.com/42GS/minishell/actions/workflows/ci.yml)
 
-C99와 POSIX 시스템 콜만으로 구현한 유닉스 셸입니다.  
-사전 아키텍처 명세([`42GS/minishell-wiki`](https://github.com/42GS/minishell-wiki))부터 5계층 자동화 QA, 경량 GHCR 컨테이너 CI까지 직접 설계하고 검증했습니다.
+C99와 POSIX 시스템 콜 기반 유닉스 셸.  
+사전 아키텍처 명세([`42GS/minishell-wiki`](https://github.com/42GS/minishell-wiki)), 5계층 자동화 QA, 경량 GHCR 컨테이너 CI 통합 구성.
 
-- **구성**: 개인 프로젝트 (1인 설계·구현·QA·CI)
+- **유형**: 개인 프로젝트
 - **기술 스택**: `C99` · `POSIX.1-2017` · `Linux` · `GNU Readline` · `Valgrind` · `Docker (GHCR)` · `GitHub Actions` · `Python`
 - **GitHub Wiki (요약)**: [42GS/minishell Wiki](https://github.com/42GS/minishell/wiki)
 - **Knowledge Base (설계·심화·회고)**: [42GS/minishell-wiki](https://github.com/42GS/minishell-wiki)
@@ -49,7 +49,7 @@ EOF
 
 ## 1. 시스템 아키텍처
 
-원시 입력을 **어휘 분석 -> AST 파싱 -> Here-doc 수집 -> 확장/Globbing -> IPC 실행** 단계로 분리하고, 모든 상태를 `t_shell` 컨텍스트에 격리했습니다.
+원시 입력을 **어휘 분석 -> AST 파싱 -> Here-doc 수집 -> 확장/Globbing -> IPC 실행** 단계로 분리, 전체 상태를 `t_shell` 컨텍스트에 격리.
 
 ```mermaid
 flowchart LR
@@ -71,7 +71,7 @@ flowchart LR
 | **Executor** | `src/executor/executor*.c` | `(N-1)` 파이프 병렬 실행, Strict Pipe-Close, `O_EXCL` Here-doc, 빈 `PATH` 탐색 |
 | **Builtins & Env** | `src/builtins/*.c`, `src/env/*.c` | `t_env_node` (`NULL` vs `""`), 7대 빌트인 (`echo`, `cd`, `pwd`, `export`, `unset`, `env`, `exit`) |
 | **Signals** | `src/signals/signals*.c` | 단일 `g_signal_num` 4-상태 `sigaction`, `termios` `ECHOCTL` 제어 |
-| **Libft & `t_strbuf`** | `libft/src/*.c` | `realloc` 없이 2배 확장을 구현한 `O(N)` 가변 버퍼 `t_strbuf` |
+| **Libft & `t_strbuf`** | `libft/src/*.c` | `realloc` 없는 2배 확장 `O(N)` 가변 버퍼 `t_strbuf` |
 
 ---
 
@@ -79,43 +79,43 @@ flowchart LR
 
 | 과제 | 해결 방식 | 검증 결과 |
 | :--- | :--- | :--- |
-| **비동기 시그널 & 리스트 중단** | 핸들러는 `g_signal_num`만 기록; `ctx->interrupted`로 `(exit 130)`과 구분 | PTY 8종 통과, Self-Deadlock 제로 |
+| **비동기 시그널 & 리스트 중단** | 핸들러 내 `g_signal_num` 단일 기록, `ctx->interrupted`로 `(exit 130)` 구분 | PTY 8종 통과, Self-Deadlock 제로 |
 | **Here-doc 64KB 데드락 & FD 누수** | `O_CREAT \| O_EXCL` + 즉시 `unlink()`, `close_ast_heredocs()` FD 격리 | `--track-fds=yes` 잔여 FD 0건 |
-| **`realloc` 없는 문자열 `O(N^2)` 병목** | `t_strbuf` capacity-doubling(`cap * 2`) 동적 버퍼 직접 구현 | 확장기·stdin 누적 비용 `O(N)` 유지 |
+| **`realloc` 없는 문자열 `O(N^2)` 병목** | `t_strbuf` capacity-doubling(`cap * 2`) 동적 버퍼 구현 | 확장기·stdin 누적 비용 `O(N)` 유지 |
 | **따옴표별 `*` 억제 & CWD 확장** | 병렬 `t_exp_buf.mask` + `opendir`/`readdir` (`globskipdots`, ASCII 정렬) | `05_bonus.json` 9/9 및 스모크 7종 통과 |
 | **파이프 EOF 행 & 빌트인 FD 훼손** | 부모·자식 미사용 파이프 즉시 닫기, 무리다이렉션 빌트인 `dup` 생략 | 다중 파이프·리다이렉션 FD 누수 0건 |
-| **CI 80초 지연 병목** | API 계측 -> GHCR 경량 이미지 + `needs` 제거 + `obj/*.o` 아카이브 + 병렬 QA | CI 총 시간 **`77~80s -> 29~36s` (-62.3%)** |
+| **CI 80초 지연 병목** | API 계측 기반 GHCR 이미지 + `needs` 제거 + `obj/*.o` 아카이브 + 병렬 QA | CI 총 시간 **`77~80s -> 29~36s` (-62.3%)** |
 
 <details>
 <summary><b>상세 설계 근거 및 트러블슈팅 펼치기 (6건)</b></summary>
 
 1. **Async-Signal-Safe 격리 & `ctx->interrupted`**
-   - **원칙**: 핸들러 내부에서 `free()`를 금지하고 `g_signal_num`만 원자적으로 기록합니다.
-   - **해결**: 메인 루프 `sync_signal_status(ctx)`에서 `130`/`131`과 `ECHOCTL`을 복원합니다.
-   - **분리**: `ctx->interrupted`로 `SIGINT` 중단과 `(exit 130) || true` 정상 종료를 구분합니다.
+   - **원칙**: 핸들러 내부 `free()` 금지, `g_signal_num`만 원자적 기록
+   - **해결**: 메인 루프 `sync_signal_status(ctx)`에서 `130`/`131` 및 `ECHOCTL` 복원
+   - **분리**: `ctx->interrupted`로 `SIGINT` 중단과 `(exit 130) || true` 정상 종료 구분
 
 2. **익명 Here-doc (`O_CREAT | O_EXCL`) & 형제 FD 정리**
-   - **문제**: 파이프 기반 Here-doc은 64KB 커널 버퍼 초과 시 `waitpid()`와 교착합니다.
-   - **해결**: `/tmp/.minishell_hd_*`를 `O_EXCL`(`0600`)로 열고 즉시 `unlink()`합니다.
-   - **격리**: 파이프·서브셸 자식은 `close_ast_heredocs(node, skip)`로 타 브랜치 FD를 닫습니다.
+   - **문제**: 파이프 기반 Here-doc 64KB 커널 버퍼 초과 시 `waitpid()` 교착 발생
+   - **해결**: `/tmp/.minishell_hd_*`를 `O_EXCL`(`0600`)로 생성 후 즉시 `unlink()` 처리
+   - **격리**: 파이프·서브셸 자식은 `close_ast_heredocs(node, skip)`로 타 브랜치 FD 정리
 
 3. **`realloc` 없는 `t_strbuf` (`O(N)`)**
-   - **제약**: 허용 함수 53종에 `realloc`이 없어 반복 `ft_strjoin` 시 `O(N^2)` 복사가 발생합니다.
-   - **해결**: 2배 용량 확장 버퍼를 직접 구현해 확장기와 비대화형 stdin 리더에 적용했습니다.
+   - **제약**: 허용 함수 53종 중 `realloc` 부재로 반복 `ft_strjoin` 시 `O(N^2)` 복사 발생
+   - **해결**: 2배 용량 확장 버퍼 구현, 확장기와 비대화형 stdin 리더에 적용
 
 4. **인용 마스크(`t_exp_buf.mask`) 기반 Globbing**
-   - **동작**: `'*.c'`·`"*"`·`"$PAT"`의 보호된 별표를 `'0'`으로 마킹해 리터럴로 남깁니다.
-   - **규칙**: 비인용 `'*'`(`'1'`)만 `globskipdots`·ASCII 정렬·원문 폴백 규칙으로 확장합니다.
+   - **동작**: `'*.c'`·`"*"`·`"$PAT"`의 보호 별표를 `'0'`으로 마킹해 리터럴 보존
+   - **규칙**: 비인용 `'*'`(`'1'`)만 `globskipdots`·ASCII 정렬·원문 폴백 규칙으로 확장
 
 5. **Strict Pipe-Close & 단일 빌트인 FD 최적화**
-   - **파이프**: 자식은 `dup2()` 직후, 부모는 포크 직후 모든 파이프 양끝을 즉시 닫습니다.
-   - **빌트인**: `!cmd->redirs`이면 `dup(0)`/`dup(1)` 백업 없이 즉시 디스패치합니다.
+   - **파이프**: 자식은 `dup2()` 직후, 부모는 포크 직후 모든 파이프 양끝 즉시 `close`
+   - **빌트인**: `!cmd->redirs` 조건 시 `dup(0)`/`dup(1)` 백업 없이 즉시 디스패치
 
 6. **CI 병목 계측 및 Make · Valgrind 호환성 해결**
-   - **계측**: GitHub Actions API로 병목(`apt-get` 25s, 직렬 대기 20s, 중복 컴파일 11s, Valgrind 15s)을 분리했습니다.
-   - **개선**: `debian:bookworm-slim` GHCR 이미지, `obj/*.o` 정적 아카이브 링크(`4s`), 13종 병렬 Valgrind(`4~7s`)를 적용했습니다.
-   - **트러블슈팅 (Make)**: `re: fclean all`의 `-j` 레이스를 피해 병렬 `make -j all`과 순차 `make re`를 분리했습니다.
-   - **트러블슈팅 (Valgrind)**: 3.26(`dup2` 표준 FD)과 3.19(`libc6-dbg` 필수, `--log-file` FD 3) 차이를 [run_valgrind_qa.sh](tests/e2e/run_valgrind_qa.sh)에 모두 반영했습니다.
+   - **계측**: GitHub Actions API 기반 병목 분리 (`apt-get` 25s, 직렬 대기 20s, 중복 컴파일 11s, Valgrind 15s)
+   - **개선**: `debian:bookworm-slim` GHCR 이미지, `obj/*.o` 정적 아카이브 링크(`4s`), 13종 병렬 Valgrind(`4~7s`) 적용
+   - **트러블슈팅 (Make)**: `re: fclean all`의 `-j` 레이스 회피를 위한 병렬 `make -j all` · 순차 `make re` 분리
+   - **트러블슈팅 (Valgrind)**: 3.26(`dup2` 표준 FD)과 3.19(`libc6-dbg` 필수, `--log-file` FD 3) 차이 대응 ([run_valgrind_qa.sh](tests/e2e/run_valgrind_qa.sh))
 
 </details>
 
@@ -123,7 +123,7 @@ flowchart LR
 
 ## 3. 구버전(`minishell-old`) 대비 재설계 성과
 
-아카이브([`42GS/minishell-old`](https://github.com/42GS/minishell-old))와 동일 머신(`LC_ALL=C`, `nm -g`/`nm -u`, 42evalhub 5대 스위트)에서 대조한 결과입니다. ([상세 회고록](https://github.com/42GS/minishell-wiki/blob/main/wiki/eval/legacy_retrospective.md))
+아카이브([`42GS/minishell-old`](https://github.com/42GS/minishell-old))와 동일 머신(`LC_ALL=C`, `nm -g`/`nm -u`, 42evalhub 5대 스위트) 대조 결과 ([상세 회고록](https://github.com/42GS/minishell-wiki/blob/main/wiki/eval/legacy_retrospective.md))
 
 | 지표 | `minishell-old` (구버전) | `minishell` (재설계) | 개선 결과 |
 | :--- | :--- | :--- | :--- |
